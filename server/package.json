@@ -1,0 +1,32 @@
+{
+  "name": "@fifa/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.1",
+    "@fastify/sensible": "^6.0.1",
+    "@fastify/static": "^8.0.2",
+    "@polymarket/clob-client": "^4.21.0",
+    "@fifa/shared": "workspace:*",
+    "drizzle-orm": "^0.36.4",
+    "ethers": "^5.7.2",
+    "fastify": "^5.1.0",
+    "pino-pretty": "^11.3.0",
+    "postgres": "^3.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "drizzle-kit": "^0.28.1",
+    "typescript": "^5.6.3"
+  }
+}

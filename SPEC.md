@@ -9,7 +9,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 **Foundations**
 - [x] Root workspace config (package.json, tsconfig, env, gitignore, README)
 - [x] Shared types package
-- [ ] Server package scaffold (env, logger, drizzle config)
+- [x] Server package scaffold (env, logger, drizzle config)
 - [ ] DB schema authored
 - [ ] Bun install + lockfile committed
 - [ ] Drizzle schema pushed to Railway Postgres
