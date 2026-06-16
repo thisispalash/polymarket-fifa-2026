@@ -57,6 +57,11 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [ ] env vars set + region pinned EU
 - [ ] PWA installable on phone
 
+**Process docs**
+- [x] `.claude/CLAUDE.md` workflow guidance
+- [x] `ce/strategy.md` (anchor doc; rerun via `/ce-strategy`)
+- [ ] `ce/plan.md` (via `/ce-plan`)
+
 ## Scope
 
 - **Single-user** to start (the developer). Multi-user is a future option but no auth in v1.
