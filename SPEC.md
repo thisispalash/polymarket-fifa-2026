@@ -8,7 +8,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 
 **Foundations**
 - [x] Root workspace config (package.json, tsconfig, env, gitignore, README)
-- [ ] Shared types package
+- [x] Shared types package
 - [ ] Server package scaffold (env, logger, drizzle config)
 - [ ] DB schema authored
 - [ ] Bun install + lockfile committed
