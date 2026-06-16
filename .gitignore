@@ -17,7 +17,6 @@ server/dist/
 
 # bun
 .bun/
-bun.lockb
 
 # tooling
 .vscode/

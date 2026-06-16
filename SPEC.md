@@ -11,7 +11,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Shared types package
 - [x] Server package scaffold (env, logger, drizzle config)
 - [x] DB schema authored
-- [ ] Bun install + lockfile committed
+- [x] Bun install + lockfile committed
 - [ ] Drizzle schema pushed to Railway Postgres
 - [ ] Polymarket CLOB client + L1→L2 bootstrap
 - [ ] Session-secret unlock gate
@@ -68,10 +68,10 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 | Layer | Choice |
 |---|---|
 | Frontend | Vite + React 18 + TypeScript + Tailwind + shadcn/ui + Recharts + `vite-plugin-pwa` |
-| Backend | Node 20 + Fastify + TypeScript |
-| Trading worker | Same Node process; `setInterval` loops + an internal job queue |
+| Backend | Bun 1.3+ + Fastify + TypeScript |
+| Trading worker | Same Bun process; `setInterval` loops + an internal job queue |
 | DB | Postgres + Drizzle ORM (Railway add-on) |
-| Polymarket SDK | `@polymarket/clob-client-v2` + `viem` |
+| Polymarket SDK | `@polymarket/client@beta` (new unified SDK) + `viem` |
 | Deploy | Railway, single service. Region: EU (matches Polymarket's eu-west-2 georestriction). |
 
 Repo layout:
@@ -84,7 +84,7 @@ Repo layout:
 ## Auth & wallet model
 
 - **Server holds the EOA private key** in env (`PRIVATE_KEY`). User accepts the risk; this is a personal app.
-- On first boot, server uses `@polymarket/clob-client-v2` to derive L2 creds (API key + secret + passphrase) from the private key, then persists them in DB so they survive restarts.
+- On first boot, server uses `@polymarket/client` to derive L2 creds (API key + secret + passphrase) from the private key, then persists them in DB so they survive restarts.
 - Funds live in Polymarket's **proxy wallet** controlled by the EOA — the SDK handles the indirection.
 - Frontend has **no wallet code** — all calls go through the backend.
 - Sensitive routes are gated by a single env-var secret (`SESSION_SECRET`); user enters it once at `/unlock`, server sets an HttpOnly cookie.
