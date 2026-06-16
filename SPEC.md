@@ -10,7 +10,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Root workspace config (package.json, tsconfig, env, gitignore, README)
 - [x] Shared types package
 - [x] Server package scaffold (env, logger, drizzle config)
-- [ ] DB schema authored
+- [x] DB schema authored
 - [ ] Bun install + lockfile committed
 - [ ] Drizzle schema pushed to Railway Postgres
 - [ ] Polymarket CLOB client + L1→L2 bootstrap
