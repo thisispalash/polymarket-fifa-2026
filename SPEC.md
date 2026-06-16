@@ -7,7 +7,7 @@ A personal, mobile-first trading dashboard for Polymarket FIFA World Cup markets
 Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 
 **Foundations**
-- [ ] Root workspace config (package.json, tsconfig, env, gitignore, README)
+- [x] Root workspace config (package.json, tsconfig, env, gitignore, README)
 - [ ] Shared types package
 - [ ] Server package scaffold (env, logger, drizzle config)
 - [ ] DB schema authored

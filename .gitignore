@@ -1,2 +1,28 @@
 .DS_Store
 .claude/settings.local.json
+
+# deps
+node_modules/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# build output
+dist/
+build/
+web/dist/
+server/dist/
+
+# bun
+.bun/
+bun.lockb
+
+# tooling
+.vscode/
+.idea/
+*.log
+
+# drizzle tmp
+drizzle/.tmp/
