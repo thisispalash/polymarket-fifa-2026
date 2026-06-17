@@ -220,3 +220,4 @@ LOG_LEVEL=info
 - News/event-driven strategies
 - Charts beyond a simple sparkline
 - Mean-reversion / vol-based strategies (#8) — additive later
+- **Conversational AI copilot + generative UI** — deferred to v2 (2026-06-17 decision; chat-driven multi-leg volatility playbooks with a constrained component palette)
