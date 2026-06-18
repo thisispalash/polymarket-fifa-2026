@@ -7,6 +7,7 @@ import { verifyDb } from "./db/push";
 import { applySessionGate } from "./auth/session";
 import { systemRoutes } from "./routes/system";
 import { marketsRoutes } from "./routes/markets";
+import { watchlistRoutes } from "./routes/watchlist";
 
 const app = Fastify({
   logger: loggerOptions,
@@ -17,6 +18,7 @@ await app.register(sensible);
 applySessionGate(app);
 await app.register(systemRoutes);
 await app.register(marketsRoutes);
+await app.register(watchlistRoutes);
 
 app.get("/healthz", async () => {
   const result = await verifyDb();
