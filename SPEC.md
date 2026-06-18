@@ -45,12 +45,12 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Vite + React + Tailwind + shadcn scaffold
 - [ ] PWA manifest + service worker
 - [x] Home / Watchlist
-- [ ] Markets list + Market detail
+- [x] Markets list + Market detail
 - [ ] Portfolio + one-tap sell sheet
 - [ ] Strategies control panel
 - [ ] Arbs page
 - [ ] Settings (kill switch, env health)
-- [ ] Recharts sparklines on watchlist + detail
+- [x] Recharts sparklines on watchlist + detail
 
 **Deploy**
 - [ ] Railway service + Postgres add-on

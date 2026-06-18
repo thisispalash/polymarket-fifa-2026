@@ -1,14 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import { UnlockPage } from "@/pages/unlock";
 import { HomePage } from "@/pages/home";
-
-function Markets() {
-  return <div className="p-4">Markets</div>;
-}
-
-function MarketDetail() {
-  return <div className="p-4">Market Detail</div>;
-}
+import { MarketsPage } from "@/pages/markets";
+import { MarketDetailPage } from "@/pages/market-detail";
 
 function Portfolio() {
   return <div className="p-4">Portfolio</div>;
@@ -31,8 +25,8 @@ export function AppRoutes() {
     <Routes>
       <Route path="/unlock" element={<UnlockPage />} />
       <Route path="/" element={<HomePage />} />
-      <Route path="/markets" element={<Markets />} />
-      <Route path="/markets/:id" element={<MarketDetail />} />
+      <Route path="/markets" element={<MarketsPage />} />
+      <Route path="/markets/:id" element={<MarketDetailPage />} />
       <Route path="/portfolio" element={<Portfolio />} />
       <Route path="/strategies" element={<Strategies />} />
       <Route path="/arbs" element={<Arbs />} />
