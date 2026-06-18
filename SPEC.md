@@ -14,7 +14,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Bun install + lockfile committed
 - [x] Drizzle schema pushed to Railway Postgres
 - [x] Polymarket CLOB client + L1→L2 bootstrap
-- [ ] Session-secret unlock gate
+- [x] Session-secret unlock gate
 
 **Backend routes**
 - [ ] `/markets` + `/markets/:id`
