@@ -30,7 +30,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] `portfolioSync` (5s)
 - [x] `tpslCheck` (5s)
 - [x] `arbScan` (10s)
-- [ ] `ladderManage` (10s)
+- [x] `ladderManage` (10s)
 - [x] `orderReconcile` (15s)
 
 **Strategies**
@@ -39,7 +39,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Take-profit / Stop-loss
 - [x] Trailing stop
 - [x] Scale-out / partial TP
-- [ ] Limit-order ladders
+- [x] Limit-order ladders
 
 **UI (mobile-first)**
 - [ ] Vite + React + Tailwind + shadcn scaffold
