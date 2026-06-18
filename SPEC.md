@@ -48,7 +48,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Markets list + Market detail
 - [x] Portfolio + one-tap sell sheet
 - [x] Strategies control panel
-- [ ] Arbs page
+- [x] Arbs page
 - [ ] Settings (kill switch, env health)
 - [x] Recharts sparklines on watchlist + detail
 
