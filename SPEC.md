@@ -29,13 +29,13 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 **Worker loops**
 - [x] `portfolioSync` (5s)
 - [ ] `tpslCheck` (5s)
-- [ ] `arbScan` (10s)
+- [x] `arbScan` (10s)
 - [ ] `ladderManage` (10s)
 - [x] `orderReconcile` (15s)
 
 **Strategies**
-- [ ] Dutch arbitrage scanner + executor (priority)
-- [ ] YES/NO arbitrage scanner + executor
+- [x] Dutch arbitrage scanner + executor (priority)
+- [x] YES/NO arbitrage scanner + executor
 - [ ] Take-profit / Stop-loss
 - [ ] Trailing stop
 - [ ] Scale-out / partial TP
