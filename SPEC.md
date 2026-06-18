@@ -42,7 +42,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Limit-order ladders
 
 **UI (mobile-first)**
-- [ ] Vite + React + Tailwind + shadcn scaffold
+- [x] Vite + React + Tailwind + shadcn scaffold
 - [ ] PWA manifest + service worker
 - [ ] Home / Watchlist
 - [ ] Markets list + Market detail
