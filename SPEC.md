@@ -47,7 +47,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Home / Watchlist
 - [x] Markets list + Market detail
 - [x] Portfolio + one-tap sell sheet
-- [ ] Strategies control panel
+- [x] Strategies control panel
 - [ ] Arbs page
 - [ ] Settings (kill switch, env health)
 - [x] Recharts sparklines on watchlist + detail

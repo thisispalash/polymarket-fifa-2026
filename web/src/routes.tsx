@@ -4,10 +4,7 @@ import { HomePage } from "@/pages/home";
 import { MarketsPage } from "@/pages/markets";
 import { MarketDetailPage } from "@/pages/market-detail";
 import { PortfolioPage } from "@/pages/portfolio";
-
-function Strategies() {
-  return <div className="p-4">Strategies</div>;
-}
+import { StrategiesPage } from "@/pages/strategies";
 
 function Arbs() {
   return <div className="p-4">Arbs</div>;
@@ -25,7 +22,7 @@ export function AppRoutes() {
       <Route path="/markets" element={<MarketsPage />} />
       <Route path="/markets/:id" element={<MarketDetailPage />} />
       <Route path="/portfolio" element={<PortfolioPage />} />
-      <Route path="/strategies" element={<Strategies />} />
+      <Route path="/strategies" element={<StrategiesPage />} />
       <Route path="/arbs" element={<Arbs />} />
       <Route path="/settings" element={<Settings />} />
     </Routes>
