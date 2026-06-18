@@ -1,10 +1,11 @@
 import { eq, and } from "drizzle-orm";
-import type { TpSlRule, TrailingStopRule } from "@fifa/shared";
+import type { TpSlRule, TrailingStopRule, ScaleOutRule } from "@fifa/shared";
 import { db } from "../db/client";
 import { strategyRules, strategyConfigs, positionsCache } from "../db/schema";
 import { submitOrder, OrderRejected } from "../safety/submitOrder";
 import { shouldFire, buildSellOrder } from "../strategies/tpsl";
 import { tick as trailingStopTick } from "../strategies/trailingStop";
+import { checkLegs } from "../strategies/scaleOut";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
@@ -29,6 +30,8 @@ async function run(): Promise<void> {
         await handleTpSl(row);
       } else if (row.kind === "trailing_stop") {
         await handleTrailingStop(row);
+      } else if (row.kind === "scale_out") {
+        await handleScaleOut(row);
       }
     } catch (err) {
       logger.error({ ruleId: row.ruleId, err }, "tpslCheck: per-rule error");
@@ -121,6 +124,36 @@ async function handleTrailingStop(row: RuleRow): Promise<void> {
       .set({ rule: updatedRule as unknown as Record<string, unknown> })
       .where(eq(strategyRules.id, row.ruleId));
   }
+}
+
+async function handleScaleOut(row: RuleRow): Promise<void> {
+  const rule = row.rule as ScaleOutRule & { tokenId?: string };
+  const tokenId = row.tokenId ?? rule.tokenId ?? null;
+  const pos = await getPosition(tokenId);
+  if (!pos) return;
+
+  const { firingLegs, updatedRule } = checkLegs(rule, pos.currentPrice, pos.shares);
+
+  for (const leg of firingLegs) {
+    try {
+      await submitOrder(
+        { tokenId: pos.tokenId, side: "SELL", type: "MARKET", size: leg.size },
+        { strategyId: row.strategyId },
+      );
+      logger.info({ ruleId: row.ruleId, legIndex: leg.index, size: leg.size }, "tpslCheck: scale_out leg fired");
+    } catch (err) {
+      if (err instanceof OrderRejected) {
+        logger.warn({ ruleId: row.ruleId, legIndex: leg.index, reason: err.message }, "tpslCheck: scale_out order rejected");
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  await db
+    .update(strategyRules)
+    .set({ rule: updatedRule as unknown as Record<string, unknown> })
+    .where(eq(strategyRules.id, row.ruleId));
 }
 
 export { getPosition };

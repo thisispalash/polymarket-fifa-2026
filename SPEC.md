@@ -38,7 +38,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] YES/NO arbitrage scanner + executor
 - [x] Take-profit / Stop-loss
 - [x] Trailing stop
-- [ ] Scale-out / partial TP
+- [x] Scale-out / partial TP
 - [ ] Limit-order ladders
 
 **UI (mobile-first)**
