@@ -11,6 +11,7 @@ import { watchlistRoutes } from "./routes/watchlist";
 import { portfolioRoutes } from "./routes/portfolio";
 import { ordersRoutes } from "./routes/orders";
 import { strategiesRoutes } from "./routes/strategies";
+import { rulesRoutes } from "./routes/rules";
 
 const app = Fastify({
   logger: loggerOptions,
@@ -25,6 +26,7 @@ await app.register(watchlistRoutes);
 await app.register(portfolioRoutes);
 await app.register(ordersRoutes);
 await app.register(strategiesRoutes);
+await app.register(rulesRoutes);
 
 app.get("/healthz", async () => {
   const result = await verifyDb();
