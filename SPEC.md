@@ -49,7 +49,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Portfolio + one-tap sell sheet
 - [x] Strategies control panel
 - [x] Arbs page
-- [ ] Settings (kill switch, env health)
+- [x] Settings (kill switch, env health)
 - [x] Recharts sparklines on watchlist + detail
 
 **Deploy**

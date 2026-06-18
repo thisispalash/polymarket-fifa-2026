@@ -6,10 +6,7 @@ import { MarketDetailPage } from "@/pages/market-detail";
 import { PortfolioPage } from "@/pages/portfolio";
 import { StrategiesPage } from "@/pages/strategies";
 import { ArbsPage } from "@/pages/arbs";
-
-function Settings() {
-  return <div className="p-4">Settings</div>;
-}
+import { SettingsPage } from "@/pages/settings";
 
 export function AppRoutes() {
   return (
@@ -21,7 +18,7 @@ export function AppRoutes() {
       <Route path="/portfolio" element={<PortfolioPage />} />
       <Route path="/strategies" element={<StrategiesPage />} />
       <Route path="/arbs" element={<ArbsPage />} />
-      <Route path="/settings" element={<Settings />} />
+      <Route path="/settings" element={<SettingsPage />} />
     </Routes>
   );
 }
