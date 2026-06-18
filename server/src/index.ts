@@ -8,6 +8,7 @@ import { applySessionGate } from "./auth/session";
 import { systemRoutes } from "./routes/system";
 import { marketsRoutes } from "./routes/markets";
 import { watchlistRoutes } from "./routes/watchlist";
+import { portfolioRoutes } from "./routes/portfolio";
 
 const app = Fastify({
   logger: loggerOptions,
@@ -19,6 +20,7 @@ applySessionGate(app);
 await app.register(systemRoutes);
 await app.register(marketsRoutes);
 await app.register(watchlistRoutes);
+await app.register(portfolioRoutes);
 
 app.get("/healthz", async () => {
   const result = await verifyDb();

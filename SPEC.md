@@ -19,7 +19,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 **Backend routes**
 - [x] `/markets` + `/markets/:id`
 - [x] `/watchlist` (add/remove/list)
-- [ ] `/portfolio` (positions + balances + PnL)
+- [x] `/portfolio` (positions + balances + PnL)
 - [ ] `/orders` (submit + cancel)
 - [ ] `/strategies` (list, toggle, allocate)
 - [ ] `/strategies/:id/rules` (CRUD)
