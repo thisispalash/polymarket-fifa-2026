@@ -161,6 +161,14 @@ export const arbOpportunities = fifa.table(
   })
 );
 
+export const killSwitchState = fifa.table("kill_switch_state", {
+  id: serial("id").primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  reason: text("reason"),
+  triggeredAt: timestamp("triggered_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const orderLog = fifa.table(
   "order_log",
   {
