@@ -46,7 +46,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [ ] PWA manifest + service worker
 - [x] Home / Watchlist
 - [x] Markets list + Market detail
-- [ ] Portfolio + one-tap sell sheet
+- [x] Portfolio + one-tap sell sheet
 - [ ] Strategies control panel
 - [ ] Arbs page
 - [ ] Settings (kill switch, env health)
