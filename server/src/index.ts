@@ -12,6 +12,7 @@ import { portfolioRoutes } from "./routes/portfolio";
 import { ordersRoutes } from "./routes/orders";
 import { strategiesRoutes } from "./routes/strategies";
 import { rulesRoutes } from "./routes/rules";
+import { startWorkers, getWorkerHealth } from "./workers/runner";
 
 const app = Fastify({
   logger: loggerOptions,
@@ -33,7 +34,7 @@ app.get("/healthz", async () => {
   if (!result.ok) {
     throw app.httpErrors.serviceUnavailable(result.error ?? "Database unreachable");
   }
-  return { ok: true, db: "reachable" };
+  return { ok: true, db: "reachable", workers: getWorkerHealth() };
 });
 
 try {
