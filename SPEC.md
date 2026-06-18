@@ -27,7 +27,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [ ] `/kill-switch`
 
 **Worker loops**
-- [ ] `portfolioSync` (5s)
+- [x] `portfolioSync` (5s)
 - [ ] `tpslCheck` (5s)
 - [ ] `arbScan` (10s)
 - [ ] `ladderManage` (10s)

@@ -13,6 +13,7 @@ import { ordersRoutes } from "./routes/orders";
 import { strategiesRoutes } from "./routes/strategies";
 import { rulesRoutes } from "./routes/rules";
 import { startWorkers, getWorkerHealth } from "./workers/runner";
+import { portfolioSyncWorker } from "./workers/portfolioSync";
 
 const app = Fastify({
   logger: loggerOptions,
@@ -40,6 +41,7 @@ app.get("/healthz", async () => {
 try {
   await app.listen({ host: "0.0.0.0", port: env.PORT });
   app.log.info(`Server listening on 0.0.0.0:${env.PORT}`);
+  startWorkers([portfolioSyncWorker]);
 } catch (error) {
   app.log.error(error, "Failed to start server");
   process.exit(1);
