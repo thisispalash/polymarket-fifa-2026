@@ -43,7 +43,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 
 **UI (mobile-first)**
 - [x] Vite + React + Tailwind + shadcn scaffold
-- [ ] PWA manifest + service worker
+- [x] PWA manifest + service worker
 - [x] Home / Watchlist
 - [x] Markets list + Market detail
 - [x] Portfolio + one-tap sell sheet
