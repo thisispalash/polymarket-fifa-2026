@@ -44,7 +44,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 **UI (mobile-first)**
 - [x] Vite + React + Tailwind + shadcn scaffold
 - [ ] PWA manifest + service worker
-- [ ] Home / Watchlist
+- [x] Home / Watchlist
 - [ ] Markets list + Market detail
 - [ ] Portfolio + one-tap sell sheet
 - [ ] Strategies control panel

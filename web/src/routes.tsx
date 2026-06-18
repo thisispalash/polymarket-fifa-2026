@@ -1,15 +1,6 @@
 import { Routes, Route } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { UnlockPage } from "@/pages/unlock";
-
-function Home() {
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">FIFA Trader</h1>
-      <Button>Hello FIFA</Button>
-    </div>
-  );
-}
+import { HomePage } from "@/pages/home";
 
 function Markets() {
   return <div className="p-4">Markets</div>;
@@ -39,7 +30,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/unlock" element={<UnlockPage />} />
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<HomePage />} />
       <Route path="/markets" element={<Markets />} />
       <Route path="/markets/:id" element={<MarketDetail />} />
       <Route path="/portfolio" element={<Portfolio />} />
