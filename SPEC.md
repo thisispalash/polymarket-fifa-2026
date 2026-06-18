@@ -28,7 +28,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 
 **Worker loops**
 - [x] `portfolioSync` (5s)
-- [ ] `tpslCheck` (5s)
+- [x] `tpslCheck` (5s)
 - [x] `arbScan` (10s)
 - [ ] `ladderManage` (10s)
 - [x] `orderReconcile` (15s)
@@ -36,7 +36,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 **Strategies**
 - [x] Dutch arbitrage scanner + executor (priority)
 - [x] YES/NO arbitrage scanner + executor
-- [ ] Take-profit / Stop-loss
+- [x] Take-profit / Stop-loss
 - [ ] Trailing stop
 - [ ] Scale-out / partial TP
 - [ ] Limit-order ladders
