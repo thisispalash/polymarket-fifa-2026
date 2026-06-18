@@ -12,6 +12,7 @@ import { portfolioRoutes } from "./routes/portfolio";
 import { ordersRoutes } from "./routes/orders";
 import { strategiesRoutes } from "./routes/strategies";
 import { rulesRoutes } from "./routes/rules";
+import { arbsRoutes } from "./routes/arbs";
 import { startWorkers, getWorkerHealth } from "./workers/runner";
 import { portfolioSyncWorker } from "./workers/portfolioSync";
 import { orderReconcileWorker } from "./workers/orderReconcile";
@@ -31,6 +32,7 @@ await app.register(portfolioRoutes);
 await app.register(ordersRoutes);
 await app.register(strategiesRoutes);
 await app.register(rulesRoutes);
+await app.register(arbsRoutes);
 
 app.get("/healthz", async () => {
   const result = await verifyDb();

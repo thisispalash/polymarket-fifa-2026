@@ -1,0 +1,111 @@
+import { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { desc, eq } from "drizzle-orm";
+import { db } from "../db/client";
+import { arbOpportunities } from "../db/schema";
+import { getMarketDetail } from "../polymarket/markets";
+import { computeStakes } from "../strategies/dutchArb";
+import { submitOrder, OrderRejected } from "../safety/submitOrder";
+import { logger } from "../logger";
+
+const executeParamsSchema = z.object({ oppId: z.coerce.number().int().positive() });
+
+interface StakeLeg {
+  tokenId: string;
+  price: number;
+  shares: number;
+  cost: number;
+}
+
+export async function arbsRoutes(app: FastifyInstance): Promise<void> {
+  // GET /arb/opportunities — newest 50 rows
+  app.get("/arb/opportunities", async (_request, reply) => {
+    try {
+      const rows = await db
+        .select()
+        .from(arbOpportunities)
+        .orderBy(desc(arbOpportunities.detectedAt))
+        .limit(50);
+      return rows;
+    } catch (err) {
+      logger.error({ err }, "arb/opportunities: db error");
+      return reply.send(app.httpErrors.internalServerError("Failed to fetch arb opportunities"));
+    }
+  });
+
+  // POST /arb/execute/:oppId — validate + re-check drift + fire legs
+  app.post<{ Params: { oppId: string } }>("/arb/execute/:oppId", async (request, reply) => {
+    const params = executeParamsSchema.safeParse(request.params);
+    if (!params.success) return reply.send(app.httpErrors.badRequest(params.error.message));
+
+    const { oppId } = params.data;
+
+    // 1. Load opportunity row
+    const [opp] = await db
+      .select()
+      .from(arbOpportunities)
+      .where(eq(arbOpportunities.id, oppId))
+      .limit(1);
+    if (!opp) return reply.status(404).send({ error: "Opportunity not found" });
+    if (opp.executed) return reply.status(409).send({ error: "already executed" });
+
+    // 2. Re-fetch fresh orderbook
+    let outcomes: Awaited<ReturnType<typeof getMarketDetail>>["outcomes"];
+    try {
+      const detail = await getMarketDetail(opp.marketId);
+      outcomes = detail.outcomes;
+    } catch (err) {
+      logger.error({ err, marketId: opp.marketId }, "arb/execute: market fetch error");
+      return reply.send(app.httpErrors.internalServerError("Failed to fetch market detail"));
+    }
+
+    const freshAsks = outcomes.map((o) => {
+      const raw = o.book.asks[0]?.price;
+      return typeof raw === "string" ? parseFloat(raw) : Number(raw ?? NaN);
+    });
+    if (freshAsks.some((p) => isNaN(p))) {
+      return reply.status(409).send({ error: "orderbook missing asks" });
+    }
+
+    const currentSum = freshAsks.reduce((a, b) => a + b, 0);
+
+    // 3. Drift guard
+    if (currentSum > opp.sumPrice + 0.01) {
+      return reply.status(409).send({ error: "price drifted" });
+    }
+
+    // 4. Recompute stakes
+    const storedLegs = opp.stakes as unknown as StakeLeg[];
+    const budget = storedLegs.reduce((s, l) => s + l.cost, 0) || 50;
+    const recomputed = computeStakes(freshAsks, budget);
+    if (!recomputed) return reply.status(409).send({ error: "no edge" });
+
+    // 5. Fire each leg
+    const results: Array<{ tokenId: string; orderId?: string; error?: string }> = [];
+    for (let i = 0; i < outcomes.length; i++) {
+      const outcome = outcomes[i]!;
+      const price = freshAsks[i]!;
+      const stake = recomputed.stakes[i]!;
+      try {
+        const res = await submitOrder(
+          { tokenId: outcome.tokenId, side: "BUY", type: "LIMIT", size: stake / price, price },
+          {},
+        );
+        results.push({ tokenId: outcome.tokenId, orderId: res.orderId });
+      } catch (err) {
+        const msg = err instanceof OrderRejected ? err.message : String(err);
+        logger.warn({ tokenId: outcome.tokenId, err: msg }, "arb/execute: leg rejected");
+        return reply.status(409).send({ error: msg });
+      }
+    }
+
+    // 6. Mark executed
+    await db
+      .update(arbOpportunities)
+      .set({ executed: true, executedAt: new Date() })
+      .where(eq(arbOpportunities.id, oppId));
+
+    logger.info({ oppId, legs: results.length }, "arb executed");
+    return { executed: true, results };
+  });
+}

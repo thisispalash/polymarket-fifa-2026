@@ -23,7 +23,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] `/orders` (submit + cancel)
 - [x] `/strategies` (list, toggle, allocate)
 - [x] `/strategies/:id/rules` (CRUD)
-- [ ] `/arb/opportunities` + `/arb/execute`
+- [x] `/arb/opportunities` + `/arb/execute`
 - [ ] `/kill-switch`
 
 **Worker loops**
