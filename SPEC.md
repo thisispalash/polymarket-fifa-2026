@@ -31,7 +31,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [ ] `tpslCheck` (5s)
 - [ ] `arbScan` (10s)
 - [ ] `ladderManage` (10s)
-- [ ] `orderReconcile` (15s)
+- [x] `orderReconcile` (15s)
 
 **Strategies**
 - [ ] Dutch arbitrage scanner + executor (priority)
