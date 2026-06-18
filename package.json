@@ -8,6 +8,7 @@
     "dev:web": "cd web && bun run dev",
     "build": "cd web && bun run build",
     "start": "NODE_ENV=production bun ./server/src/index.ts",
+    "start:prod": "bun run build && NODE_ENV=production bun ./server/src/index.ts",
     "db:generate": "cd server && bun run db:generate",
     "db:push": "cd server && bun run db:push",
     "db:studio": "cd server && bun run db:studio",

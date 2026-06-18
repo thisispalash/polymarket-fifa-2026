@@ -53,9 +53,9 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Recharts sparklines on watchlist + detail
 
 **Deploy**
-- [ ] Railway service + Postgres add-on
-- [ ] env vars set + region pinned EU
-- [ ] PWA installable on phone
+- [x] Railway service + Postgres add-on
+- [x] env vars set + region pinned EU
+- [x] PWA installable on phone
 
 **Process docs**
 - [x] `.claude/CLAUDE.md` workflow guidance

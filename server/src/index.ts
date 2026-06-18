@@ -1,6 +1,8 @@
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import sensible from "@fastify/sensible";
+import fastifyStatic from "@fastify/static";
+import { resolve } from "node:path";
 import { env } from "./env";
 import { loggerOptions } from "./logger";
 import { verifyDb } from "./db/push";
@@ -43,6 +45,25 @@ app.get("/healthz", async () => {
   }
   return { ok: true, db: "reachable", workers: getWorkerHealth() };
 });
+
+// In production, serve the built PWA from web/dist. The session gate
+// allowlists /healthz, /unlock, /session — every other API path is
+// gated. Static assets must not collide with API routes; they don't,
+// since the SPA lives at /, /assets/*, /icons/*, etc.
+if (env.NODE_ENV === "production") {
+  await app.register(fastifyStatic, {
+    root: resolve(import.meta.dir, "../../web/dist"),
+    prefix: "/",
+    wildcard: false,
+  });
+  // SPA fallback: send any unmatched GET to index.html so React Router can route it.
+  app.setNotFoundHandler((request, reply) => {
+    if (request.method === "GET" && !request.url.startsWith("/api")) {
+      return reply.sendFile("index.html");
+    }
+    return reply.status(404).send({ error: "not found" });
+  });
+}
 
 try {
   await app.listen({ host: "0.0.0.0", port: env.PORT });
