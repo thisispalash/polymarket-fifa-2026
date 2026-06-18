@@ -1,9 +1,10 @@
 import { eq, and } from "drizzle-orm";
-import type { TpSlRule } from "@fifa/shared";
+import type { TpSlRule, TrailingStopRule } from "@fifa/shared";
 import { db } from "../db/client";
 import { strategyRules, strategyConfigs, positionsCache } from "../db/schema";
 import { submitOrder, OrderRejected } from "../safety/submitOrder";
 import { shouldFire, buildSellOrder } from "../strategies/tpsl";
+import { tick as trailingStopTick } from "../strategies/trailingStop";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
@@ -26,6 +27,8 @@ async function run(): Promise<void> {
     try {
       if (row.kind === "tp_sl") {
         await handleTpSl(row);
+      } else if (row.kind === "trailing_stop") {
+        await handleTrailingStop(row);
       }
     } catch (err) {
       logger.error({ ruleId: row.ruleId, err }, "tpslCheck: per-rule error");
@@ -84,6 +87,40 @@ async function handleTpSl(row: RuleRow): Promise<void> {
     .set({ status: "consumed", lastFiredAt: new Date() })
     .where(eq(strategyRules.id, row.ruleId));
   logger.info({ ruleId: row.ruleId, trigger }, "tpslCheck: tp_sl fired");
+}
+
+async function handleTrailingStop(row: RuleRow): Promise<void> {
+  const rule = row.rule as TrailingStopRule & { tokenId?: string };
+  const tokenId = row.tokenId ?? rule.tokenId ?? null;
+  const pos = await getPosition(tokenId);
+  if (!pos) return;
+
+  const { updatedRule, fire } = trailingStopTick(rule, pos.currentPrice);
+
+  if (fire) {
+    try {
+      await submitOrder(
+        { tokenId: pos.tokenId, side: "SELL", type: "MARKET", size: pos.shares },
+        { strategyId: row.strategyId },
+      );
+    } catch (err) {
+      if (err instanceof OrderRejected) {
+        logger.warn({ ruleId: row.ruleId, reason: err.message }, "tpslCheck: trailing_stop order rejected");
+        return;
+      }
+      throw err;
+    }
+    await db
+      .update(strategyRules)
+      .set({ status: "consumed", lastFiredAt: new Date(), rule: updatedRule as unknown as Record<string, unknown> })
+      .where(eq(strategyRules.id, row.ruleId));
+    logger.info({ ruleId: row.ruleId }, "tpslCheck: trailing_stop fired");
+  } else {
+    await db
+      .update(strategyRules)
+      .set({ rule: updatedRule as unknown as Record<string, unknown> })
+      .where(eq(strategyRules.id, row.ruleId));
+  }
 }
 
 export { getPosition };
