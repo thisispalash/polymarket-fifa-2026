@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { UnlockPage } from "@/pages/unlock";
 
 function Home() {
   return (
@@ -8,10 +9,6 @@ function Home() {
       <Button>Hello FIFA</Button>
     </div>
   );
-}
-
-function Unlock() {
-  return <div className="p-4">Unlock</div>;
 }
 
 function Markets() {
@@ -41,7 +38,7 @@ function Settings() {
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/unlock" element={<Unlock />} />
+      <Route path="/unlock" element={<UnlockPage />} />
       <Route path="/" element={<Home />} />
       <Route path="/markets" element={<Markets />} />
       <Route path="/markets/:id" element={<MarketDetail />} />
