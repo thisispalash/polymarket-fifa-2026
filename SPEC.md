@@ -17,7 +17,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Session-secret unlock gate
 
 **Backend routes**
-- [ ] `/markets` + `/markets/:id`
+- [x] `/markets` + `/markets/:id`
 - [ ] `/watchlist` (add/remove/list)
 - [ ] `/portfolio` (positions + balances + PnL)
 - [ ] `/orders` (submit + cancel)
