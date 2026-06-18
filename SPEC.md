@@ -12,7 +12,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Server package scaffold (env, logger, drizzle config)
 - [x] DB schema authored
 - [x] Bun install + lockfile committed
-- [ ] Drizzle schema pushed to Railway Postgres
+- [x] Drizzle schema pushed to Railway Postgres
 - [ ] Polymarket CLOB client + L1→L2 bootstrap
 - [ ] Session-secret unlock gate
 
