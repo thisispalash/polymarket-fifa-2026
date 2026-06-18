@@ -24,7 +24,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] `/strategies` (list, toggle, allocate)
 - [x] `/strategies/:id/rules` (CRUD)
 - [x] `/arb/opportunities` + `/arb/execute`
-- [ ] `/kill-switch`
+- [x] `/kill-switch`
 
 **Worker loops**
 - [x] `portfolioSync` (5s)
