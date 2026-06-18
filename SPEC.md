@@ -20,7 +20,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] `/markets` + `/markets/:id`
 - [x] `/watchlist` (add/remove/list)
 - [x] `/portfolio` (positions + balances + PnL)
-- [ ] `/orders` (submit + cancel)
+- [x] `/orders` (submit + cancel)
 - [ ] `/strategies` (list, toggle, allocate)
 - [ ] `/strategies/:id/rules` (CRUD)
 - [ ] `/arb/opportunities` + `/arb/execute`
