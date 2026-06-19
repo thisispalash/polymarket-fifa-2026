@@ -59,6 +59,23 @@ export async function submitOrder(
       .set({ status: "placed", orderId: response.orderId, responsePayload: response as unknown as Record<string, unknown>, updatedAt: new Date() })
       .where(eq(orderLog.id, logId));
     logger.info({ logId, orderId: response.orderId }, "order placed");
+
+    // Kill switch could have been tripped during the SDK call (200ms-2s).
+    // If so, cancel the just-placed order so it doesn't sit on the book
+    // after the operator hit the kill switch.
+    if (await isKillSwitchEnabled()) {
+      try {
+        await client.cancelOrder({ orderId: response.orderId });
+        logger.warn({ logId, orderId: response.orderId }, "kill switch tripped during SDK call — cancelled just-placed order");
+      } catch (cancelErr) {
+        logger.error({ logId, orderId: response.orderId, err: cancelErr }, "kill switch tripped during SDK call — FAILED to cancel just-placed order");
+      }
+      await db.update(orderLog)
+        .set({ status: "cancelled", errorMessage: "kill_switch tripped during SDK call", updatedAt: new Date() })
+        .where(eq(orderLog.id, logId));
+      throw new OrderRejected("kill_switch", { orderId: response.orderId, racedDuringSdk: true });
+    }
+
     return { orderId: response.orderId, status: response.status };
   }
 

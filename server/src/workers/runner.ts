@@ -14,12 +14,14 @@ type HealthEntry = {
 
 const health: Record<string, HealthEntry> = {};
 const timers: ReturnType<typeof setTimeout>[] = [];
+let stopped = false;
 
 function jitter(ms: number): number {
   return ms + Math.floor((Math.random() * 0.2 - 0.1) * ms);
 }
 
 function scheduleNext(worker: WorkerDef): void {
+  if (stopped) return;
   const t = setTimeout(async () => {
     try {
       await worker.run();
@@ -39,6 +41,7 @@ function scheduleNext(worker: WorkerDef): void {
 }
 
 export function startWorkers(workers: WorkerDef[]): void {
+  stopped = false;
   for (const w of workers) {
     health[w.name] = { lastRunOk: true, lastRunAt: null };
     scheduleNext(w);
@@ -46,9 +49,14 @@ export function startWorkers(workers: WorkerDef[]): void {
   }
 }
 
+// Halt scheduling of further worker ticks. Any tick already in-flight will
+// complete, but no new ones will fire. Used by the kill switch and by
+// SIGTERM/SIGINT shutdown paths.
 export function stopWorkers(): void {
+  stopped = true;
   for (const t of timers) clearTimeout(t);
   timers.length = 0;
+  logger.info("workers stopped");
 }
 
 export function getWorkerHealth(): Record<string, HealthEntry> {
