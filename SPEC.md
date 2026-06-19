@@ -55,7 +55,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 
 **Deploy**
 - [x] Railway service + Postgres add-on
-- [x] env vars set + region pinned EU
+- [x] env vars set + region pinned US-East (decision 2026-06-19; non-restricted jurisdiction per user)
 - [x] PWA installable on phone
 
 **Process docs**
