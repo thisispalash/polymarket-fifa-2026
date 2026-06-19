@@ -50,10 +50,18 @@ export function SettingsPage() {
 
   const activateKill = useMutation({
     mutationFn: (reason: string) =>
-      api.post("/api/kill-switch", { reason: reason || undefined }),
+      api.post("/api/kill-switch", { enabled: true, reason: reason || undefined }),
     onSuccess: () => {
       setKillConfirm(false);
       void qc.invalidateQueries({ queryKey: ["kill-switch"] });
+    },
+  });
+
+  const deactivateKill = useMutation({
+    mutationFn: () => api.post("/api/kill-switch", { enabled: false }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["kill-switch"] });
+      void qc.invalidateQueries({ queryKey: ["healthz"] });
     },
   });
 
@@ -105,6 +113,17 @@ export function SettingsPage() {
             <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 font-medium">
               All clear — no kill switch active
             </div>
+          )}
+
+          {ks?.enabled && (
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={deactivateKill.isPending}
+              onClick={() => deactivateKill.mutate()}
+            >
+              {deactivateKill.isPending ? "Deactivating…" : "Deactivate kill switch (workers will restart)"}
+            </Button>
           )}
 
           {!ks?.enabled && !killConfirm && (

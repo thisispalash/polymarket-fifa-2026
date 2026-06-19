@@ -5,7 +5,7 @@ import { db } from "../db/client";
 import { killSwitchState, strategyConfigs } from "../db/schema";
 import { setKillSwitch } from "../safety/killSwitch";
 import { getSecureClient } from "../polymarket/client";
-import { stopWorkers } from "../workers/runner";
+import { stopWorkers, restartWorkers } from "../workers/runner";
 import { env } from "../env";
 import { cookieMatches } from "../auth/session";
 import { logger } from "../logger";
@@ -52,40 +52,53 @@ export async function systemRoutes(app: FastifyInstance): Promise<void> {
     };
   });
 
-  const killSwitchBody = z.object({ reason: z.string().optional() });
+  const killSwitchBody = z.object({
+    enabled: z.boolean(),
+    reason: z.string().optional(),
+  });
 
-  // POST /kill-switch — cancel all orders, set flag, disable all strategies.
-  // Order matters: stop workers and flip the flag BEFORE cancelAll, so an
-  // in-flight worker tick can't race a fresh order through after cancel.
+  // POST /kill-switch — body { enabled: true | false, reason?: string }.
+  //   enabled: true  -> stop workers, flip flag, cancelAll, disable strategies
+  //   enabled: false -> clear flag and restart workers. Strategies stay
+  //                     off so the operator re-enables them deliberately.
   app.post("/kill-switch", async (request, reply) => {
     const parsed = killSwitchBody.safeParse(request.body);
     if (!parsed.success) return reply.send(app.httpErrors.badRequest(parsed.error.message));
 
-    const { reason } = parsed.data;
+    const { enabled, reason } = parsed.data;
 
-    // 1. Stop scheduling new worker ticks. In-flight ticks still complete,
-    //    but submitOrder will see the kill flag (step 2) before/after the SDK call.
-    stopWorkers();
+    if (enabled) {
+      // 1. Stop scheduling new worker ticks. In-flight ticks still complete,
+      //    but submitOrder will see the kill flag (step 2) before/after the SDK call.
+      stopWorkers();
 
-    // 2. Flip the kill switch so any submitOrder mid-flight rejects.
-    await setKillSwitch(true, reason);
+      // 2. Flip the kill switch so any submitOrder mid-flight rejects.
+      await setKillSwitch(true, reason);
 
-    // 3. Cancel all open orders via SDK — failure is logged but not fatal.
-    let cancelledCount: number | "unknown" = "unknown";
-    try {
-      const client = await getSecureClient();
-      const result = await client.cancelAll();
-      const ids = (result as { canceled?: string[] }).canceled;
-      cancelledCount = Array.isArray(ids) ? ids.length : "unknown";
-      logger.info({ cancelledCount }, "kill-switch: cancelAll succeeded");
-    } catch (err) {
-      logger.error({ err }, "kill-switch: cancelAll failed, continuing");
+      // 3. Cancel all open orders via SDK — failure is logged but not fatal.
+      let cancelledCount: number | "unknown" = "unknown";
+      try {
+        const client = await getSecureClient();
+        const result = await client.cancelAll();
+        const ids = (result as { canceled?: string[] }).canceled;
+        cancelledCount = Array.isArray(ids) ? ids.length : "unknown";
+        logger.info({ cancelledCount }, "kill-switch: cancelAll succeeded");
+      } catch (err) {
+        logger.error({ err }, "kill-switch: cancelAll failed, continuing");
+      }
+
+      // 4. Disable every strategy config so the next process boot stays off.
+      await db.update(strategyConfigs).set({ enabled: false, updatedAt: new Date() });
+
+      logger.warn({ reason, cancelledCount }, "kill switch activated");
+      return { killed: true, cancelledCount };
     }
 
-    // 4. Disable every strategy config so the next process boot stays off.
-    await db.update(strategyConfigs).set({ enabled: false, updatedAt: new Date() });
-
-    logger.warn({ reason, cancelledCount }, "kill switch activated");
-    return { killed: true, cancelledCount };
+    // Deactivate path. Clear the flag and bring workers back. Strategies
+    // remain disabled — the operator re-enables them via the strategies page.
+    await setKillSwitch(false);
+    restartWorkers();
+    logger.info("kill switch deactivated; workers restarted");
+    return { killed: false };
   });
 }

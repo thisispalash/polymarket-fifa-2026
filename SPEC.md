@@ -69,7 +69,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] P0 #3 — Naked legs on arb partial failure
 - [x] P0 #4 — Kill switch escape window + `stopWorkers()`
 - [x] P0 #5 — `edgePct` rendered ×100
-- [ ] P0 #6 — Clearable kill switch via API body
+- [x] P0 #6 — Clearable kill switch via API body
 - [ ] P0 #7 — Manual `/arb/execute` skips strategy cap
 
 ## Scope

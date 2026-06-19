@@ -15,6 +15,7 @@ type HealthEntry = {
 const health: Record<string, HealthEntry> = {};
 const timers: ReturnType<typeof setTimeout>[] = [];
 let stopped = false;
+let registeredWorkers: WorkerDef[] = [];
 
 function jitter(ms: number): number {
   return ms + Math.floor((Math.random() * 0.2 - 0.1) * ms);
@@ -41,6 +42,7 @@ function scheduleNext(worker: WorkerDef): void {
 }
 
 export function startWorkers(workers: WorkerDef[]): void {
+  registeredWorkers = workers;
   stopped = false;
   for (const w of workers) {
     health[w.name] = { lastRunOk: true, lastRunAt: null };
@@ -57,6 +59,25 @@ export function stopWorkers(): void {
   for (const t of timers) clearTimeout(t);
   timers.length = 0;
   logger.info("workers stopped");
+}
+
+// Re-schedule the previously-registered workers after a stopWorkers call.
+// Used by the kill switch deactivate path. No-op if workers were never
+// started or if they're currently running.
+export function restartWorkers(): void {
+  if (registeredWorkers.length === 0) {
+    logger.warn("restartWorkers: no workers were ever registered, no-op");
+    return;
+  }
+  if (!stopped) {
+    logger.warn("restartWorkers: workers are already running, no-op");
+    return;
+  }
+  stopped = false;
+  for (const w of registeredWorkers) {
+    scheduleNext(w);
+    logger.info({ worker: w.name }, "worker restarted");
+  }
 }
 
 export function getWorkerHealth(): Record<string, HealthEntry> {
