@@ -1,4 +1,5 @@
 import { and, eq, gt, sql } from "drizzle-orm";
+import type { SubmitOrderInput } from "@fifa/shared";
 import { db } from "../db/client";
 import { strategyConfigs, strategyExecutions } from "../db/schema";
 
@@ -17,6 +18,14 @@ export class OrderRejected extends Error {
 
 export function wouldBreachCap(sumSpent: number, cap: number, costUsdc: number): boolean {
   return sumSpent + costUsdc > cap;
+}
+
+// MARKET BUY: SDK takes `amount: input.size` (USDC); input.size IS the cost.
+// LIMIT (either side): cost = shares × price.
+// MARKET SELL: no price → cost = 0; a sell recoups capital, not deploys it.
+export function computeOrderCostUsdc(input: SubmitOrderInput): number {
+  if (input.side === "BUY" && input.type === "MARKET") return input.size;
+  return input.size * (input.price ?? 0);
 }
 
 export async function assertWithinCap(strategyId: number, costUsdc: number): Promise<void> {

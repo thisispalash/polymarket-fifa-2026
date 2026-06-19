@@ -65,7 +65,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 
 **Post-build hardening (review `ce/reviews/2026-06-18-1600.md`)**
 - [x] P0 #1 — `/api` prefix mismatch (web/server/proxy/healthcheck aligned)
-- [ ] P0 #2 — MARKET BUY cap bypass
+- [x] P0 #2 — MARKET BUY cap bypass
 - [ ] P0 #3 — Naked legs on arb partial failure
 - [ ] P0 #4 — Kill switch escape window + `stopWorkers()`
 - [ ] P0 #5 — `edgePct` rendered ×100

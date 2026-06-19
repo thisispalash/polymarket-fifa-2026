@@ -7,10 +7,31 @@ mock.module("../db/schema", () => ({
   strategyExecutions: {},
 }));
 
-const { wouldBreachCap } = await import("./caps");
+const { wouldBreachCap, computeOrderCostUsdc } = await import("./caps");
 
 test("cap=100, sumSpent=50, cost=49 → false (under cap)", () => {
   expect(wouldBreachCap(50, 100, 49)).toBe(false);
+});
+
+test("computeOrderCostUsdc: LIMIT BUY → size × price", () => {
+  expect(computeOrderCostUsdc({ tokenId: "t", side: "BUY", type: "LIMIT", size: 100, price: 0.42 })).toBe(42);
+});
+
+test("computeOrderCostUsdc: LIMIT SELL → size × price", () => {
+  expect(computeOrderCostUsdc({ tokenId: "t", side: "SELL", type: "LIMIT", size: 100, price: 0.42 })).toBe(42);
+});
+
+test("computeOrderCostUsdc: MARKET BUY → size (size is USDC amount; price ignored)", () => {
+  // Regression for P0 #2 — was returning 0 because input.price was undefined.
+  expect(computeOrderCostUsdc({ tokenId: "t", side: "BUY", type: "MARKET", size: 500 })).toBe(500);
+});
+
+test("computeOrderCostUsdc: MARKET SELL → 0 (no price, sell recoups capital)", () => {
+  expect(computeOrderCostUsdc({ tokenId: "t", side: "SELL", type: "MARKET", size: 100 })).toBe(0);
+});
+
+test("computeOrderCostUsdc: MARKET BUY with stray price field → still size (USDC amount wins)", () => {
+  expect(computeOrderCostUsdc({ tokenId: "t", side: "BUY", type: "MARKET", size: 500, price: 0.9 })).toBe(500);
 });
 
 test("cap=100, sumSpent=50, cost=50 → false (exactly at cap, allowed)", () => {

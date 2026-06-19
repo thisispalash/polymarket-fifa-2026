@@ -6,7 +6,7 @@ import { orderLog } from "../db/schema";
 import { getSecureClient } from "../polymarket/client";
 import { logger } from "../logger";
 import { isKillSwitchEnabled } from "./killSwitch";
-import { assertWithinCap, OrderRejected } from "./caps";
+import { assertWithinCap, computeOrderCostUsdc, OrderRejected } from "./caps";
 
 export { OrderRejected };
 
@@ -18,7 +18,7 @@ export async function submitOrder(
 ): Promise<{ orderId: string; status: string }> {
   if (await isKillSwitchEnabled()) throw new OrderRejected("kill_switch");
   if (opts.strategyId !== undefined)
-    await assertWithinCap(opts.strategyId, input.size * (input.price ?? 0));
+    await assertWithinCap(opts.strategyId, computeOrderCostUsdc(input));
 
   const [row] = await db
     .insert(orderLog)
