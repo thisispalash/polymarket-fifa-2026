@@ -4,6 +4,7 @@ import { watchlist, strategyConfigs, arbOpportunities } from "../db/schema";
 import { getMarketDetail } from "../polymarket/markets";
 import { detect, computeStakes } from "../strategies/dutchArb";
 import { submitOrder, OrderRejected } from "../safety/submitOrder";
+import { cancelLegsBestEffort } from "../safety/unwind";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
@@ -52,20 +53,36 @@ async function tick(): Promise<void> {
 
       if (config?.enabled === true && config.autoExecute === true) {
         const strategyId = config.id;
+        const placedOrderIds: string[] = [];
+        let legError: unknown = null;
+        let failedLegIdx: number | null = null;
         for (let i = 0; i < outcomes.length; i++) {
           const outcome = outcomes[i];
           const price = asks[i];
           const stake = stakes[i];
           if (outcome === undefined || price === undefined || stake === undefined) continue;
           try {
-            await submitOrder({ tokenId: outcome.tokenId, side: "BUY", type: "LIMIT", size: stake / price, price }, { strategyId });
+            const res = await submitOrder(
+              { tokenId: outcome.tokenId, side: "BUY", type: "LIMIT", size: stake / price, price },
+              { strategyId },
+            );
+            placedOrderIds.push(res.orderId);
           } catch (err) {
-            if (err instanceof OrderRejected) {
-              logger.warn({ marketId: row.marketId, err: err.message }, "arb order rejected");
-            } else {
-              throw err;
-            }
+            legError = err;
+            failedLegIdx = i;
+            break;
           }
+        }
+        if (legError !== null) {
+          const msg = legError instanceof OrderRejected ? legError.message : String(legError);
+          logger.warn(
+            { marketId: row.marketId, legIdx: failedLegIdx, placedCount: placedOrderIds.length, err: msg },
+            "arbScan: auto-exec leg failed, unwinding prior legs",
+          );
+          await cancelLegsBestEffort(placedOrderIds, {
+            source: "arbScan.auto-exec",
+            marketId: row.marketId,
+          });
         }
       }
     } catch (err) {

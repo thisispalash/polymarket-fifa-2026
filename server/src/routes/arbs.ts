@@ -6,6 +6,7 @@ import { arbOpportunities } from "../db/schema";
 import { getMarketDetail } from "../polymarket/markets";
 import { computeStakes } from "../strategies/dutchArb";
 import { submitOrder, OrderRejected } from "../safety/submitOrder";
+import { cancelLegsBestEffort } from "../safety/unwind";
 import { logger } from "../logger";
 
 const executeParamsSchema = z.object({ oppId: z.coerce.number().int().positive() });
@@ -80,8 +81,10 @@ export async function arbsRoutes(app: FastifyInstance): Promise<void> {
     const recomputed = computeStakes(freshAsks, budget);
     if (!recomputed) return reply.status(409).send({ error: "no edge" });
 
-    // 5. Fire each leg
+    // 5. Fire each leg. On any failure, unwind the legs already placed so
+    //    the user is never left holding a one-sided position.
     const results: Array<{ tokenId: string; orderId?: string; error?: string }> = [];
+    const placedOrderIds: string[] = [];
     for (let i = 0; i < outcomes.length; i++) {
       const outcome = outcomes[i]!;
       const price = freshAsks[i]!;
@@ -91,11 +94,23 @@ export async function arbsRoutes(app: FastifyInstance): Promise<void> {
           { tokenId: outcome.tokenId, side: "BUY", type: "LIMIT", size: stake / price, price },
           {},
         );
+        placedOrderIds.push(res.orderId);
         results.push({ tokenId: outcome.tokenId, orderId: res.orderId });
       } catch (err) {
         const msg = err instanceof OrderRejected ? err.message : String(err);
-        logger.warn({ tokenId: outcome.tokenId, err: msg }, "arb/execute: leg rejected");
-        return reply.status(409).send({ error: msg });
+        logger.warn(
+          { tokenId: outcome.tokenId, legIdx: i, placedCount: placedOrderIds.length, err: msg },
+          "arb/execute: leg rejected, unwinding prior legs",
+        );
+        const { cancelled, failedIds } = await cancelLegsBestEffort(placedOrderIds, {
+          source: "arb/execute",
+          marketId: opp.marketId,
+        });
+        return reply.status(409).send({
+          error: msg,
+          unwound: cancelled,
+          unwindFailures: failedIds.length > 0 ? failedIds : undefined,
+        });
       }
     }
 
