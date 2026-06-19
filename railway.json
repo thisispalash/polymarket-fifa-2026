@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "NODE_ENV=production bun ./server/src/index.ts",
-    "healthcheckPath": "/healthz",
+    "healthcheckPath": "/api/healthz",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5,

@@ -63,6 +63,15 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] `ce/strategy.md` (anchor doc; rerun via `/ce-strategy`)
 - [x] `ce/plan.md` (via `/ce-plan`)
 
+**Post-build hardening (review `ce/reviews/2026-06-18-1600.md`)**
+- [x] P0 #1 — `/api` prefix mismatch (web/server/proxy/healthcheck aligned)
+- [ ] P0 #2 — MARKET BUY cap bypass
+- [ ] P0 #3 — Naked legs on arb partial failure
+- [ ] P0 #4 — Kill switch escape window + `stopWorkers()`
+- [ ] P0 #5 — `edgePct` rendered ×100
+- [ ] P0 #6 — Clearable kill switch via API body
+- [ ] P0 #7 — Manual `/arb/execute` skips strategy cap
+
 ## Scope
 
 - **Single-user** to start (the developer). Multi-user is a future option but no auth in v1.

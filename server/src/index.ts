@@ -29,22 +29,23 @@ const app = Fastify({
 await app.register(cookie);
 await app.register(sensible);
 applySessionGate(app);
-await app.register(systemRoutes);
-await app.register(marketsRoutes);
-await app.register(watchlistRoutes);
-await app.register(portfolioRoutes);
-await app.register(ordersRoutes);
-await app.register(strategiesRoutes);
-await app.register(rulesRoutes);
-await app.register(arbsRoutes);
-
-app.get("/healthz", async () => {
-  const result = await verifyDb();
-  if (!result.ok) {
-    throw app.httpErrors.serviceUnavailable(result.error ?? "Database unreachable");
-  }
-  return { ok: true, db: "reachable", workers: getWorkerHealth() };
-});
+await app.register(async (api) => {
+  api.get("/healthz", async () => {
+    const result = await verifyDb();
+    if (!result.ok) {
+      throw api.httpErrors.serviceUnavailable(result.error ?? "Database unreachable");
+    }
+    return { ok: true, db: "reachable", workers: getWorkerHealth() };
+  });
+  await api.register(systemRoutes);
+  await api.register(marketsRoutes);
+  await api.register(watchlistRoutes);
+  await api.register(portfolioRoutes);
+  await api.register(ordersRoutes);
+  await api.register(strategiesRoutes);
+  await api.register(rulesRoutes);
+  await api.register(arbsRoutes);
+}, { prefix: "/api" });
 
 // In production, serve the built PWA from web/dist. The session gate
 // allowlists /healthz, /unlock, /session — every other API path is
