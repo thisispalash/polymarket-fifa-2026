@@ -46,7 +46,7 @@ function ArbRow({ opp }: { opp: ArbOpportunity }) {
               Σ {opp.sumPrice.toFixed(3)}
             </span>
             <span className="text-xs px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">
-              {(opp.edgePct * 100).toFixed(2)}% edge
+              {opp.edgePct.toFixed(2)}% edge
             </span>
             <span className="text-xs text-muted-foreground">{timeAgo(opp.detectedAt)}</span>
           </div>
