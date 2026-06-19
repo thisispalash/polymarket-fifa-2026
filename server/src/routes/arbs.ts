@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { arbOpportunities } from "../db/schema";
+import { arbOpportunities, strategyConfigs } from "../db/schema";
 import { getMarketDetail } from "../polymarket/markets";
 import { computeStakes } from "../strategies/dutchArb";
 import { submitOrder, OrderRejected } from "../safety/submitOrder";
@@ -50,6 +50,22 @@ export async function arbsRoutes(app: FastifyInstance): Promise<void> {
     if (!opp) return reply.status(404).send({ error: "Opportunity not found" });
     if (opp.executed) return reply.status(409).send({ error: "already executed" });
 
+    // 1b. Resolve the strategy id for this arb kind so submitOrder enforces
+    //     the per-strategy capital cap on the manual execute path. Without
+    //     this, the user could click Execute on a $400 arb under a $50 cap
+    //     and submitOrder would let it through.
+    const [strategy] = await db
+      .select({ id: strategyConfigs.id })
+      .from(strategyConfigs)
+      .where(eq(strategyConfigs.kind, opp.kind))
+      .limit(1);
+    if (!strategy) {
+      return reply
+        .status(500)
+        .send({ error: `No ${opp.kind} strategy config — has it been seeded via GET /strategies?` });
+    }
+    const strategyId = strategy.id;
+
     // 2. Re-fetch fresh orderbook
     let outcomes: Awaited<ReturnType<typeof getMarketDetail>>["outcomes"];
     try {
@@ -92,7 +108,7 @@ export async function arbsRoutes(app: FastifyInstance): Promise<void> {
       try {
         const res = await submitOrder(
           { tokenId: outcome.tokenId, side: "BUY", type: "LIMIT", size: stake / price, price },
-          {},
+          { strategyId },
         );
         placedOrderIds.push(res.orderId);
         results.push({ tokenId: outcome.tokenId, orderId: res.orderId });

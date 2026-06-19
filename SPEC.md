@@ -70,7 +70,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] P0 #4 — Kill switch escape window + `stopWorkers()`
 - [x] P0 #5 — `edgePct` rendered ×100
 - [x] P0 #6 — Clearable kill switch via API body
-- [ ] P0 #7 — Manual `/arb/execute` skips strategy cap
+- [x] P0 #7 — Manual `/arb/execute` skips strategy cap
 
 ## Scope
 
