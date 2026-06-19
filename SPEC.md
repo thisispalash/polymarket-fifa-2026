@@ -40,6 +40,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Trailing stop
 - [x] Scale-out / partial TP
 - [x] Limit-order ladders
+- [ ] Volatility strangle (resting two-sided limit, captures intra-game vol) — v1.1, planned as `ce/plan.md` U37
 
 **UI (mobile-first)**
 - [x] Vite + React + Tailwind + shadcn scaffold

@@ -1,6 +1,6 @@
 ---
 name: FIFA Trader Implementation Plan
-last_updated: 2026-06-16
+last_updated: 2026-06-19
 status: active
 origin: SPEC.md
 strategy: ce/strategy.md
@@ -396,6 +396,64 @@ The headline track. **Build in this order; U19 unblocks the worker scan and U20 
 
 ---
 
+### Follow-up strategies — Track 2.5 (post-v1 baseline)
+
+These add on after the original 6 strategies in `SPEC.md` are live and the v1 review wave has shipped.
+
+#### U37. Volatility strangle strategy
+
+- **Goal**: A new strategy kind (`volatility_strangle`) that places resting limit BUYs on BOTH YES and NO sides of a binary market at aggressive prices below the current spread. During a high-volatility event (football match with goal swings), the price thrashes through both extremes and accumulates fills on both wings cheaply. If sum-of-fills < $1 → guaranteed profit at resolution (or instant via conditional-token merge). If only one wing fills, optional stop-loss limits directional drawdown. If neither fills, no capital used. Conceptually: "buy a strangle on a binary outcome and let realized volatility do the work."
+- **Dependencies**: U25 (limit_ladder infra — resting limit lifecycle, fill detection via orderReconcile), U22 (tpslCheck patterns for stop-loss path), and **the P0 fix wave** (especially the per-leg unwind from review #3 and the cap-check correction from review #2) — the strangle inherits both correctness fixes.
+- **Files**:
+  - `shared/src/index.ts` — add `volatility_strangle` to `StrategyKind` and `STRATEGY_KINDS`; add `STRATEGY_LABELS["volatility_strangle"] = "Volatility strangle"`; add `VolatilityStrangleRule` and `StrangleStatus` types.
+  - `server/src/strategies/volatilityStrangle.ts` — pure state machine + helpers: `nextState(rule, fillEvents, nowIso)`, `reservedCapital(rule)` (yesBidPrice·yesSize + noBidPrice·noSize), `unwindOrder(rule, side, position)`.
+  - `server/src/workers/strangleManage.ts` — new 10s worker. Alternative: fold into `ladderManage` if state coupling stays clean.
+  - `server/src/routes/rules.ts` — extend zod schema branch for `volatility_strangle` rule shape.
+  - `server/src/db/schema.ts` — no schema change required; reuses `strategy_rules.rule` jsonb and the existing status enum (consider extending values if `status` collisions with strangle states).
+- **Approach**:
+  - Rule shape:
+    ```ts
+    type VolatilityStrangleRule = {
+      marketId: string;
+      yesTokenId: string;  yesBidPrice: number;  yesSize: number;
+      noTokenId: string;   noBidPrice: number;   noSize: number;
+      cancelAt: string;                    // ISO; hard horizon, e.g. full-time + 5min buffer
+      stopLossOnSingleFill?: number;       // e.g. 0.10 = cut at -10% of filled leg cost
+      yesOrderId?: string;  yesFilled?: boolean;
+      noOrderId?: string;   noFilled?: boolean;
+      state: "pending" | "yes_filled" | "no_filled" | "both_filled" | "unwinding" | "expired";
+    };
+    ```
+  - State transitions (pure, in `volatilityStrangle.ts`):
+    - `pending` → place both legs via `submitOrder` (LIMIT, single-rung each). Cap reserves the full `yesBidPrice·yesSize + noBidPrice·noSize` upfront via a synthetic execution row OR by passing both costs into a multi-leg cap variant (see U37 sub-question Q4).
+    - `pending`/`yes_filled`/`no_filled` → check `orderLog` for fills (via the existing reconcile path); advance state.
+    - `both_filled` → terminal "won"; optional next step: invoke conditional-token merge for immediate $1/pair (open question Q5).
+    - any single-fill state past `cancelAt` → if `stopLossOnSingleFill` set, fire a market sell of the filled side at acceptable slippage; otherwise cancel the unfilled leg and leave the filled leg to resolve naturally.
+    - `pending` past `cancelAt` → cancel both, transition to `expired`.
+  - Worker tick (every 10s):
+    1. Load active strangle rules.
+    2. For each: read fresh `orderLog` rows for `yesOrderId`/`noOrderId`; compute next state.
+    3. Apply transitions: place missing legs, cancel on expiry, unwind on stop, persist updated rule.
+    4. Capital cap is enforced at `pending → place` time for the SUM of both legs (not per-leg) so we don't double-spend the budget on the second leg.
+  - Auto-cancel horizon: `cancelAt` defaults to full-time + 5 minutes (configurable per rule). Worker cancels open legs ≥1 tick before `cancelAt` to give Polymarket cancel time.
+  - UI: extends the strategies page with a "Volatility strangle" card; "New strangle" form lets the user pick a market, type YES/NO bid prices and sizes, and a cancelAt time. Existing strangles render as compact tiles with state badges.
+- **Test scenarios**:
+  - **Both fill, sum < $1**: yesFill at 0.13, noFill at 0.25 → `both_filled`; with conditional merge enabled, redeem returns $1 per pair → +$0.62 profit per pair.
+  - **Only YES fills, cancelAt passes, stop set**: state advances to `yes_filled` → after cancelAt, unwinds YES at market with `stopLossOnSingleFill = 0.10` → leg sold near best bid; persisted loss within bound.
+  - **Only YES fills, no stop set**: leg left to resolve naturally; rule transitions to `expired` with `noOrderId` cancelled. Position remains for normal portfolio handling.
+  - **Neither fills, cancelAt hits**: both legs cancelled; `state = expired`; no capital used; cap window untouched.
+  - **Sum-of-fills > $1 (rare: bid walks)**: still `both_filled` but realized PnL negative. The rule's bid prices should have prevented this (sum < $1 invariant at place time); worker logs a warning if observed at fill time.
+  - **Cap math under coupled legs**: with $50 cap, a strangle at (0.13×100, 0.25×100) reserves $38 immediately; a second concurrent strangle of $20 → first passes, second is rejected with cap_breach (because $38 + $20 > $50).
+  - **Race: both fills arrive in same tick**: worker handles `both_filled` atomically; no duplicate "single-fill" stop-loss fires.
+- **Verification**: Unit tests for `nextState` over the matrix of (yesFilled, noFilled, nowVsCancelAt, hasStop). Manual smoke: create a strangle on a live market with sub-cent edge bids that won't actually fill; verify orders placed, then cancel via cancelAt expiry.
+- **Open questions to resolve in this unit**:
+  - Q4: Cap accounting for multi-leg reservation — extend `assertWithinCap` to accept an array of leg costs and reserve atomically? Or introduce a `reservations` table that subtracts from the 24h window?
+  - Q5: Does `@polymarket/client@beta` expose conditional-token merge directly, or do we need a viem `writeContract` call against the `ConditionalTokens` proxy? If the latter, the merge step is a follow-up sub-unit, not blocking U37.
+  - Q6: Should `volatility_strangle` be exposed in arbScan auto-detect mode too (scan markets and auto-create strangles when realized vol > threshold), or strictly user-configured? Lean strictly user-configured for v1.1; auto-detect is v1.2.
+- **SPEC marker**: Add a new bullet under SPEC `## Build progress` → `Strategies` section: `- [ ] Volatility strangle (resting two-sided limit, captures intra-game vol)`. Flip to `[x]` on completion. Also add Strategy #10 entry under SPEC `## Features`.
+
+---
+
 ### Mobile fluency — Track 3
 
 All web units can run in parallel with each other after **U26** lands the scaffold. They're sequential with the backend routes they consume.
@@ -540,6 +598,10 @@ Suggested subagent fan-out:
 ### In scope (v1)
 
 Everything in `SPEC.md` § Features 1–9, plus all 6 strategies built fully (no stubs).
+
+### In scope (v1.1 — after P0/P1 review wave lands)
+
+- **U37 Volatility strangle**: a 7th strategy kind that rests two-sided limits and harvests intra-game volatility. Lives in Track 2.5. Decision recorded 2026-06-19.
 
 ### Deferred to follow-up work
 
