@@ -57,6 +57,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] Railway service + Postgres add-on
 - [x] env vars set + region pinned US-East (decision 2026-06-19; non-restricted jurisdiction per user)
 - [x] PWA installable on phone
+- [x] Builder migrated from deprecated Nixpacks to Railpack (2026-06-21)
 
 **Process docs**
 - [x] `.claude/CLAUDE.md` workflow guidance
@@ -71,6 +72,26 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] P0 #5 — `edgePct` rendered ×100
 - [x] P0 #6 — Clearable kill switch via API body
 - [x] P0 #7 — Manual `/arb/execute` skips strategy cap
+
+P1 wave:
+- [ ] P1 #8 — worker health shape (Record vs array)
+- [ ] P1 #9 — position side stored as "BUY" instead of "YES"/"NO"
+- [ ] P1 #10 — cap accounting ignores in-flight orders
+- [ ] P1 #11 — TOCTOU on cap check + insert
+- [ ] P1 #12 — arbScan divides by zero on ask=0
+- [ ] P1 #13 — arb opportunities not deduped
+- [ ] P1 #14 — no SIGTERM/SIGINT graceful shutdown
+- [ ] P1 #15 — orderReconcile unknown status spins forever
+- [ ] P1 #16 — partial fills logged with original size
+- [ ] P1 #17 — OrderRejected meta dropped from 409 body
+- [ ] P1 #18 — cookie value IS env.SESSION_SECRET (unrevocable)
+- [ ] P1 #19 — watchlist toggle sends marketId in slug field
+- [ ] P1 #20 — portfolioSync only fetches firstPage()
+- [ ] P1 #21 — unbounded priceHistory inserts
+- [ ] P1 #22 — rules consumed after submitOrder (double-fire risk)
+- [ ] P1 #23 — no SDK call timeouts in workers
+- [ ] P1 #24 — autoExecute flag unreachable (no route)
+- [ ] P1 #25 — killSwitch triggeredAt preserved on re-enable
 
 ## Scope
 
