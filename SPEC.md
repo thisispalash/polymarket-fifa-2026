@@ -81,8 +81,8 @@ P1 wave:
 - [x] P1 #12 — arbScan divides by zero on ask=0
 - [x] P1 #13 — arb opportunities not deduped
 - [x] P1 #14 — no SIGTERM/SIGINT graceful shutdown
-- [ ] P1 #15 — orderReconcile unknown status spins forever
-- [ ] P1 #16 — partial fills logged with original size
+- [x] P1 #15 — orderReconcile unknown status spins forever
+- [x] P1 #16 — partial fills logged with original size
 - [x] P1 #17 — OrderRejected meta dropped from 409 body
 - [ ] P1 #18 — cookie value IS env.SESSION_SECRET (unrevocable)
 - [x] P1 #19 — watchlist toggle sends marketId in slug field
