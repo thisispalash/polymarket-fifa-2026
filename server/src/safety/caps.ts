@@ -1,7 +1,16 @@
 import { and, eq, gt, inArray, sql } from "drizzle-orm";
+import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { SubmitOrderInput } from "@fifa/shared";
 import { db } from "../db/client";
 import { strategyConfigs, strategyExecutions, orderLog } from "../db/schema";
+
+// Either the global db or an in-progress transaction. The cap query needs
+// to run against the same snapshot as the orderLog insert to close the
+// TOCTOU race; the caller wraps both in a SERIALIZABLE tx and passes it.
+// drizzle's PgTransaction has higher-kinded type params we don't need to
+// surface here — `any` keeps the union open to any valid tx instance.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DbOrTx = typeof db | PgTransaction<any, any, any>;
 
 const CAP_WINDOW_MS = 24 * 60 * 60 * 1_000;
 const INFLIGHT_STATUSES = ["submitted", "placed", "pending"] as const;
@@ -32,8 +41,12 @@ export function computeOrderCostUsdc(input: SubmitOrderInput): number {
   return input.size * (input.price ?? 0);
 }
 
-export async function assertWithinCap(strategyId: number, costUsdc: number): Promise<void> {
-  const cfgRows = await db
+export async function assertWithinCap(
+  strategyId: number,
+  costUsdc: number,
+  handle: DbOrTx = db,
+): Promise<void> {
+  const cfgRows = await handle
     .select({ capitalCap: strategyConfigs.capitalCap })
     .from(strategyConfigs)
     .where(eq(strategyConfigs.id, strategyId))
@@ -47,7 +60,7 @@ export async function assertWithinCap(strategyId: number, costUsdc: number): Pro
   // of age, so no window — orders that are still resting against a 25h-old
   // limit ladder still tie up cap.
   const [spendRows, inflightRows] = await Promise.all([
-    db
+    handle
       .select({ sumSpent: sql<number>`coalesce(sum(size * price), 0)` })
       .from(strategyExecutions)
       .where(
@@ -56,7 +69,7 @@ export async function assertWithinCap(strategyId: number, costUsdc: number): Pro
           gt(strategyExecutions.createdAt, windowStart),
         ),
       ),
-    db
+    handle
       .select({
         sumInflight: sql<number>`coalesce(sum(
           case

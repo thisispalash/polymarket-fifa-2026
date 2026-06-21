@@ -12,25 +12,58 @@ export { OrderRejected };
 
 interface SubmitOpts { strategyId?: number }
 
+// Postgres returns 40001 (serialization_failure) when SSI detects two
+// concurrent SERIALIZABLE txns whose effects would otherwise leak past
+// each other. We retry once — under realistic v1 contention (a couple
+// of worker ticks racing) the second attempt sees the prior commit and
+// either passes cleanly or rejects via assertWithinCap.
+function isSerializationFailure(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "40001"
+  );
+}
+
+async function reserveOrderRow(
+  input: SubmitOrderInput,
+  opts: SubmitOpts,
+): Promise<number> {
+  return await db.transaction(async (tx) => {
+    if (opts.strategyId !== undefined) {
+      await assertWithinCap(opts.strategyId, computeOrderCostUsdc(input), tx);
+    }
+    const [row] = await tx
+      .insert(orderLog)
+      .values({
+        tokenId: input.tokenId, side: input.side, type: input.type,
+        price: input.price, size: input.size, strategyId: opts.strategyId,
+        status: "submitted", requestPayload: input as Record<string, unknown>,
+      })
+      .returning({ id: orderLog.id });
+    if (!row) throw new Error("Failed to insert order_log row");
+    return row.id;
+  }, { isolationLevel: "serializable" });
+}
+
 export async function submitOrder(
   input: SubmitOrderInput,
   opts: SubmitOpts,
 ): Promise<{ orderId: string; status: string }> {
   if (await isKillSwitchEnabled()) throw new OrderRejected("kill_switch");
-  if (opts.strategyId !== undefined)
-    await assertWithinCap(opts.strategyId, computeOrderCostUsdc(input));
 
-  const [row] = await db
-    .insert(orderLog)
-    .values({
-      tokenId: input.tokenId, side: input.side, type: input.type,
-      price: input.price, size: input.size, strategyId: opts.strategyId,
-      status: "submitted", requestPayload: input as Record<string, unknown>,
-    })
-    .returning({ id: orderLog.id });
-
-  const logId = row?.id;
-  if (logId === undefined) throw new Error("Failed to insert order_log row");
+  let logId: number;
+  try {
+    logId = await reserveOrderRow(input, opts);
+  } catch (err) {
+    if (isSerializationFailure(err)) {
+      logger.warn({ strategyId: opts.strategyId }, "submitOrder: serialization conflict, retrying once");
+      logId = await reserveOrderRow(input, opts);
+    } else {
+      throw err;
+    }
+  }
 
   const client = await getSecureClient();
   const sdkSide = input.side === "BUY" ? OrderSide.BUY : OrderSide.SELL;
