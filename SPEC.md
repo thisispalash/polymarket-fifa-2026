@@ -78,8 +78,8 @@ P1 wave:
 - [x] P1 #9 — position side stored as "BUY" instead of "YES"/"NO"
 - [ ] P1 #10 — cap accounting ignores in-flight orders
 - [ ] P1 #11 — TOCTOU on cap check + insert
-- [ ] P1 #12 — arbScan divides by zero on ask=0
-- [ ] P1 #13 — arb opportunities not deduped
+- [x] P1 #12 — arbScan divides by zero on ask=0
+- [x] P1 #13 — arb opportunities not deduped
 - [ ] P1 #14 — no SIGTERM/SIGINT graceful shutdown
 - [ ] P1 #15 — orderReconcile unknown status spins forever
 - [ ] P1 #16 — partial fills logged with original size
