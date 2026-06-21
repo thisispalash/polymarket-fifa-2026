@@ -87,7 +87,7 @@ P1 wave:
 - [ ] P1 #18 — cookie value IS env.SESSION_SECRET (unrevocable)
 - [x] P1 #19 — watchlist toggle sends marketId in slug field
 - [x] P1 #20 — portfolioSync only fetches firstPage()
-- [ ] P1 #21 — unbounded priceHistory inserts
+- [x] P1 #21 — unbounded priceHistory inserts (writes removed; table kept for future history endpoint)
 - [x] P1 #22 — rules consumed after submitOrder (double-fire risk)
 - [x] P1 #23 — no SDK call timeouts in workers (reads only; writes deferred)
 - [x] P1 #24 — autoExecute flag unreachable (no route)

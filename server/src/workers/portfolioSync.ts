@@ -6,7 +6,7 @@ import { AssetType } from "@polymarket/bindings/clob";
 import { fetchBalanceAllowance } from "@polymarket/client/actions";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { positionsCache, balancesCache, priceHistory } from "../db/schema";
+import { positionsCache, balancesCache } from "../db/schema";
 import { getSecureClient, getPublicClient } from "../polymarket/client";
 import { withTimeout, SDK_READ_TIMEOUT_MS } from "../safety/timeout";
 import { logger } from "../logger";
@@ -56,8 +56,6 @@ async function run(): Promise<void> {
           target: positionsCache.tokenId,
           set: { shares, avgPrice: avgP, currentPrice, updatedAt: new Date() },
         });
-
-      await db.insert(priceHistory).values({ tokenId, price: currentPrice, recordedAt: new Date() });
     }
   }
 
