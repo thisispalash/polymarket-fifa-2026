@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { positionsCache, balancesCache, priceHistory } from "../db/schema";
 import { getSecureClient, getPublicClient } from "../polymarket/client";
+import { withTimeout, SDK_READ_TIMEOUT_MS } from "../safety/timeout";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
@@ -32,7 +33,7 @@ async function run(): Promise<void> {
 
       let currentPrice = pos.curPrice != null ? parseFloat(pos.curPrice) : 0;
       try {
-        const mid = await pub.fetchMidpoint({ tokenId });
+        const mid = await withTimeout(pub.fetchMidpoint({ tokenId }), SDK_READ_TIMEOUT_MS, `fetchMidpoint(${tokenId})`);
         currentPrice = parseFloat(mid);
       } catch {
         // fallback to curPrice already set
@@ -61,7 +62,11 @@ async function run(): Promise<void> {
   }
 
   // --- balances ---
-  const bal = await fetchBalanceAllowance(client, { assetType: AssetType.COLLATERAL });
+  const bal = await withTimeout(
+    fetchBalanceAllowance(client, { assetType: AssetType.COLLATERAL }),
+    SDK_READ_TIMEOUT_MS,
+    "fetchBalanceAllowance",
+  );
   const usdc = Number(bal.balance) / 1e6;
 
   const existing = await db.select().from(balancesCache).limit(1);

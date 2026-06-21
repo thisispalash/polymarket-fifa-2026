@@ -89,7 +89,7 @@ P1 wave:
 - [x] P1 #20 — portfolioSync only fetches firstPage()
 - [ ] P1 #21 — unbounded priceHistory inserts
 - [x] P1 #22 — rules consumed after submitOrder (double-fire risk)
-- [ ] P1 #23 — no SDK call timeouts in workers
+- [x] P1 #23 — no SDK call timeouts in workers (reads only; writes deferred)
 - [x] P1 #24 — autoExecute flag unreachable (no route)
 - [x] P1 #25 — killSwitch triggeredAt preserved on re-enable
 

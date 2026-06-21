@@ -2,6 +2,7 @@
 // `export * from '@polymarket/bindings/gamma'` and `export * from '@polymarket/bindings/clob'`.
 import type { Market as SdkMarket, OrderBook as SdkOrderBook } from "@polymarket/client";
 import { getPublicClient } from "./client";
+import { withTimeout, SDK_READ_TIMEOUT_MS } from "../safety/timeout";
 import { logger } from "../logger";
 
 export type { SdkMarket, SdkOrderBook };
@@ -33,7 +34,7 @@ export async function listFifaMarkets(opts: {
     ...(opts.cursor ? { cursor: opts.cursor } : {}),
   });
 
-  const page = await paginator.firstPage();
+  const page = await withTimeout(paginator.firstPage(), SDK_READ_TIMEOUT_MS, "listMarkets.firstPage");
   const items = (page.items as SdkMarket[]).filter(isFifaMarket);
 
   logger.debug({ count: items.length, hasMore: page.hasMore }, "listFifaMarkets");
@@ -51,7 +52,7 @@ export async function getMarketDetail(id: string): Promise<{
 }> {
   const client = getPublicClient();
 
-  const market = await client.fetchMarket({ id });
+  const market = await withTimeout(client.fetchMarket({ id }), SDK_READ_TIMEOUT_MS, `fetchMarket(${id})`);
 
   // outcomes.yes / outcomes.no each carry a nullable tokenId
   const outcomeTokens = (
@@ -62,7 +63,9 @@ export async function getMarketDetail(id: string): Promise<{
   ).filter((o): o is { label: string; tokenId: string } => o.tokenId != null);
 
   const books = await Promise.all(
-    outcomeTokens.map((o) => client.fetchOrderBook({ tokenId: o.tokenId }))
+    outcomeTokens.map((o) =>
+      withTimeout(client.fetchOrderBook({ tokenId: o.tokenId }), SDK_READ_TIMEOUT_MS, `fetchOrderBook(${o.tokenId})`),
+    ),
   );
 
   const outcomes = outcomeTokens.map((o, i) => ({

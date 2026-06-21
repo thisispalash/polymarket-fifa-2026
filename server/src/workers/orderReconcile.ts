@@ -3,6 +3,7 @@ import type { OpenOrder } from "@polymarket/client";
 import { db } from "../db/client";
 import { orderLog, strategyExecutions } from "../db/schema";
 import { getSecureClient } from "../polymarket/client";
+import { withTimeout, SDK_READ_TIMEOUT_MS } from "../safety/timeout";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
@@ -43,9 +44,9 @@ async function run(): Promise<void> {
 
     let order: OpenOrder;
     try {
-      order = await client.fetchOrder({ orderId });
+      order = await withTimeout(client.fetchOrder({ orderId }), SDK_READ_TIMEOUT_MS, `fetchOrder(${orderId})`);
     } catch (err) {
-      logger.warn({ orderId, err }, "orderReconcile: fetchOrder failed, skipping row");
+      logger.warn({ orderId, err }, "orderReconcile: fetchOrder failed or timed out, skipping row");
       continue;
     }
 
