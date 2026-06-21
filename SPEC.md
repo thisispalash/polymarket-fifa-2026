@@ -73,7 +73,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] P0 #6 — Clearable kill switch via API body
 - [x] P0 #7 — Manual `/arb/execute` skips strategy cap
 
-P1 wave:
+P1 wave (deploy step: `cd server && bun run scripts/migrate-p1-hardening.ts` applies the two schema deltas — drizzle-kit push 0.28 errored on unrelated PK columns so we issue the ALTERs directly):
 - [x] P1 #8 — worker health shape (Record vs array)
 - [x] P1 #9 — position side stored as "BUY" instead of "YES"/"NO"
 - [x] P1 #10 — cap accounting ignores in-flight orders

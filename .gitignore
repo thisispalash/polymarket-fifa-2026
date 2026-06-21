@@ -23,5 +23,6 @@ server/dist/
 .idea/
 *.log
 
-# drizzle tmp
-drizzle/.tmp/
+# drizzle-kit generate output — we use `db:push` (no migration files),
+# but generate still drops baselines here when run for inspection.
+drizzle/
