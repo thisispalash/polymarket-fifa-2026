@@ -8,6 +8,7 @@ import { logger } from "../logger";
 
 const toggleBodySchema = z.object({ enabled: z.boolean() });
 const allocateBodySchema = z.object({ capitalCap: z.number().min(0) });
+const autoExecuteBodySchema = z.object({ autoExecute: z.boolean() });
 const idParamsSchema = z.object({ id: z.coerce.number().int().positive() });
 
 async function seedIfEmpty(): Promise<void> {
@@ -71,6 +72,23 @@ export async function strategiesRoutes(app: FastifyInstance): Promise<void> {
 
     if (!updated) return reply.send(app.httpErrors.notFound("Strategy not found"));
     logger.info({ id: params.data.id, capitalCap: body.data.capitalCap }, "strategy allocated");
+    return updated;
+  });
+
+  app.post<{ Params: { id: string } }>("/strategies/:id/auto-execute", async (request, reply) => {
+    const params = idParamsSchema.safeParse(request.params);
+    if (!params.success) return reply.send(app.httpErrors.badRequest(params.error.message));
+    const body = autoExecuteBodySchema.safeParse(request.body);
+    if (!body.success) return reply.send(app.httpErrors.badRequest(body.error.message));
+
+    const [updated] = await db
+      .update(strategyConfigs)
+      .set({ autoExecute: body.data.autoExecute, updatedAt: new Date() })
+      .where(eq(strategyConfigs.id, params.data.id))
+      .returning();
+
+    if (!updated) return reply.send(app.httpErrors.notFound("Strategy not found"));
+    logger.info({ id: params.data.id, autoExecute: body.data.autoExecute }, "strategy auto-execute set");
     return updated;
   });
 }
