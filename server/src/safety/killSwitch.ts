@@ -33,12 +33,15 @@ export async function setKillSwitch(
     });
   } else {
     const row = existing[0]!;
+    // triggeredAt: clear on disable so the next enable stamps a fresh
+    // moment-of-trigger. Preserving the old one made re-trigger timelines
+    // forensically misleading.
     await db
       .update(killSwitchState)
       .set({
         enabled,
         reason: enabled ? (reason ?? row.reason) : null,
-        triggeredAt: enabled && !row.enabled ? now : row.triggeredAt,
+        triggeredAt: enabled ? (row.enabled ? row.triggeredAt : now) : null,
         updatedAt: now,
       })
       .where(eq(killSwitchState.id, row.id));

@@ -91,7 +91,7 @@ P1 wave:
 - [ ] P1 #22 — rules consumed after submitOrder (double-fire risk)
 - [ ] P1 #23 — no SDK call timeouts in workers
 - [ ] P1 #24 — autoExecute flag unreachable (no route)
-- [ ] P1 #25 — killSwitch triggeredAt preserved on re-enable
+- [x] P1 #25 — killSwitch triggeredAt preserved on re-enable
 
 ## Scope
 
