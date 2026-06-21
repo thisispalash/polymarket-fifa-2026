@@ -85,7 +85,7 @@ P1 wave:
 - [ ] P1 #16 — partial fills logged with original size
 - [ ] P1 #17 — OrderRejected meta dropped from 409 body
 - [ ] P1 #18 — cookie value IS env.SESSION_SECRET (unrevocable)
-- [ ] P1 #19 — watchlist toggle sends marketId in slug field
+- [x] P1 #19 — watchlist toggle sends marketId in slug field
 - [ ] P1 #20 — portfolioSync only fetches firstPage()
 - [ ] P1 #21 — unbounded priceHistory inserts
 - [ ] P1 #22 — rules consumed after submitOrder (double-fire risk)

@@ -17,6 +17,7 @@ type DetailOutcome = {
 
 type MarketDetail = {
   id: string;
+  slug: string;
   question: string;
   conditionId: string;
   active: boolean;
@@ -52,7 +53,7 @@ export function MarketDetailPage() {
     mutationFn: () =>
       inWatchlist
         ? api.del(`/api/watchlist/${id}`)
-        : api.post(`/api/watchlist/${id}`, { slug: market?.id ?? "", question: market?.question ?? "", conditionId: market?.conditionId ?? "" }),
+        : api.post(`/api/watchlist/${id}`, { slug: market?.slug ?? "", question: market?.question ?? "", conditionId: market?.conditionId ?? "" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["watchlist"] }),
   });
 
