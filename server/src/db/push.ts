@@ -2,8 +2,11 @@ import { db } from "./client";
 import { sql } from "drizzle-orm";
 import { logger } from "../logger";
 
+export type DbStatus = "healthy" | "schema_missing" | "db_unreachable";
+
 export interface VerifyDbResult {
   ok: boolean;
+  status: DbStatus;
   schemaPresent: boolean;
   tables: string[];
   error?: string;
@@ -29,6 +32,7 @@ export async function verifyDb(): Promise<VerifyDbResult> {
     if (!schemaPresent) {
       return {
         ok: false,
+        status: "schema_missing",
         schemaPresent: false,
         tables: [],
         error: "fifa schema not found. Run `bun run db:push` from server/ to push the schema.",
@@ -49,10 +53,19 @@ export async function verifyDb(): Promise<VerifyDbResult> {
       (r) => r.table_name
     );
 
-    const ok = tables.length > 0;
+    if (tables.length === 0) {
+      return {
+        ok: false,
+        status: "schema_missing",
+        schemaPresent: true,
+        tables: [],
+        error: "fifa schema is empty. Run `bun run db:push` from server/ to push the tables.",
+      };
+    }
 
     return {
-      ok,
+      ok: true,
+      status: "healthy",
       schemaPresent: true,
       tables,
     };
@@ -60,6 +73,7 @@ export async function verifyDb(): Promise<VerifyDbResult> {
     const message = error instanceof Error ? error.message : String(error);
     return {
       ok: false,
+      status: "db_unreachable",
       schemaPresent: false,
       tables: [],
       error: `Database connection failed: ${message}`,

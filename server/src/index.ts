@@ -30,12 +30,25 @@ await app.register(cookie);
 await app.register(sensible);
 applySessionGate(app);
 await app.register(async (api) => {
+  // The healthcheck's job is "is the container up and the DB reachable?",
+  // NOT "is the schema fully bootstrapped?". A schema_missing state is a
+  // valid bootstrap-pending state — the container is alive and the
+  // operator just needs to run `bun run db:push`. Failing the healthcheck
+  // there creates a chicken-and-egg with Railway's deploy gating.
   api.get("/healthz", async () => {
     const result = await verifyDb();
-    if (!result.ok) {
+    if (result.status === "db_unreachable") {
       throw api.httpErrors.serviceUnavailable(result.error ?? "Database unreachable");
     }
-    return { ok: true, db: "reachable", workers: getWorkerHealth() };
+    return {
+      ok: true,
+      db: result.status,
+      tables: result.tables.length,
+      hint: result.status === "schema_missing"
+        ? "run `bun run db:push` from server/ to push the schema"
+        : undefined,
+      workers: getWorkerHealth(),
+    };
   });
   await api.register(systemRoutes);
   await api.register(marketsRoutes);
