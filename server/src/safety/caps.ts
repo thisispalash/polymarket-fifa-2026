@@ -10,7 +10,10 @@ export class OrderRejected extends Error {
   readonly reason: "cap_breach" | "kill_switch";
   readonly meta: Record<string, unknown>;
   constructor(reason: "cap_breach" | "kill_switch", meta: Record<string, unknown> = {}) {
-    super(`Order rejected: ${reason}`);
+    const detail = Object.keys(meta).length === 0
+      ? ""
+      : ` (${Object.entries(meta).map(([k, v]) => `${k}=${v}`).join(", ")})`;
+    super(`Order rejected: ${reason}${detail}`);
     this.name = "OrderRejected";
     this.reason = reason;
     this.meta = meta;

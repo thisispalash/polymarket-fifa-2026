@@ -30,7 +30,11 @@ export async function ordersRoutes(app: FastifyInstance): Promise<void> {
       return result;
     } catch (err) {
       if (err instanceof OrderRejected) {
-        return reply.status(409).send({ error: err.reason });
+        return reply.status(409).send({
+          error: err.reason,
+          message: err.message,
+          meta: err.meta,
+        });
       }
       throw err;
     }
