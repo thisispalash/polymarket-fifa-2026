@@ -1,3 +1,4 @@
+import type { WorkerHealth } from "@fifa/shared";
 import { logger } from "../logger";
 
 export type WorkerDef = {
@@ -6,11 +7,7 @@ export type WorkerDef = {
   run: () => Promise<void>;
 };
 
-type HealthEntry = {
-  lastRunOk: boolean;
-  lastRunAt: string | null;
-  lastError?: string;
-};
+type HealthEntry = Omit<WorkerHealth, "name">;
 
 const health: Record<string, HealthEntry> = {};
 const timers: ReturnType<typeof setTimeout>[] = [];
@@ -26,7 +23,7 @@ function scheduleNext(worker: WorkerDef): void {
   const t = setTimeout(async () => {
     try {
       await worker.run();
-      health[worker.name] = { lastRunOk: true, lastRunAt: new Date().toISOString() };
+      health[worker.name] = { lastRunOk: true, lastRunAt: new Date().toISOString(), lastError: null };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       health[worker.name] = {
@@ -45,7 +42,7 @@ export function startWorkers(workers: WorkerDef[]): void {
   registeredWorkers = workers;
   stopped = false;
   for (const w of workers) {
-    health[w.name] = { lastRunOk: true, lastRunAt: null };
+    health[w.name] = { lastRunOk: true, lastRunAt: null, lastError: null };
     scheduleNext(w);
     logger.info({ worker: w.name, intervalMs: w.intervalMs }, `worker started: ${w.name} (${w.intervalMs / 1000}s)`);
   }
@@ -80,6 +77,6 @@ export function restartWorkers(): void {
   }
 }
 
-export function getWorkerHealth(): Record<string, HealthEntry> {
-  return { ...health };
+export function getWorkerHealth(): WorkerHealth[] {
+  return Object.entries(health).map(([name, entry]) => ({ name, ...entry }));
 }

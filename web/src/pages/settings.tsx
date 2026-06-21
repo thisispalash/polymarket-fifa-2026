@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import type { WorkerHealth } from "@fifa/shared";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-type WorkerHealth = {
-  name: string;
-  lastRunOk: boolean;
-  lastRunAt: string | null;
-  lastError: string | null;
-};
 
 type HealthResponse = {
   ok: boolean;

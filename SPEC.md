@@ -74,7 +74,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 - [x] P0 #7 — Manual `/arb/execute` skips strategy cap
 
 P1 wave:
-- [ ] P1 #8 — worker health shape (Record vs array)
+- [x] P1 #8 — worker health shape (Record vs array)
 - [ ] P1 #9 — position side stored as "BUY" instead of "YES"/"NO"
 - [ ] P1 #10 — cap accounting ignores in-flight orders
 - [ ] P1 #11 — TOCTOU on cap check + insert

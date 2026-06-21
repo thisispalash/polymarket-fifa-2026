@@ -128,6 +128,13 @@ export type LimitLadderRule = {
   maxActive: number;
 };
 
+export type WorkerHealth = {
+  name: string;
+  lastRunOk: boolean;
+  lastRunAt: string | null;
+  lastError: string | null;
+};
+
 export type ArbOpportunity = {
   id: number;
   kind: "dutch_arb" | "yesno_arb";
