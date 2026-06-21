@@ -168,6 +168,19 @@ export const killSwitchState = fifa.table("kill_switch_state", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const sessions = fifa.table(
+  "sessions",
+  {
+    id: serial("id").primaryKey(),
+    tokenHash: text("token_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    tokenHashUnique: uniqueIndex("sessions_token_hash_unique").on(t.tokenHash),
+  })
+);
+
 export const orderLog = fifa.table(
   "order_log",
   {

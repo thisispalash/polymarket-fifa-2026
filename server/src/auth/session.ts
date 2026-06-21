@@ -1,19 +1,48 @@
 import { FastifyInstance } from "fastify";
-import { timingSafeEqual } from "node:crypto";
-import { env } from "../env";
+import { createHash, randomBytes } from "node:crypto";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client";
+import { sessions } from "../db/schema";
+import { logger } from "../logger";
+
+export const COOKIE_NAME = "fifa_session";
 
 const ALLOWLIST = new Set(["/api/healthz", "/api/unlock", "/api/session"]);
 
-export function cookieMatches(value: string | undefined): boolean {
-  if (!value) return false;
-  try {
-    const a = Buffer.from(value);
-    const b = Buffer.from(env.SESSION_SECRET);
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+// Why hash: the cookie value is server-issued opaque random bytes, but
+// hashing what we persist means a DB dump alone doesn't grant access —
+// the attacker would also need a live cookie to forge the lookup.
+export function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+// 32 random bytes → 256 bits of entropy → guessing is infeasible.
+export function generateSessionToken(): string {
+  return randomBytes(32).toString("base64url");
+}
+
+export async function createSession(): Promise<string> {
+  const token = generateSessionToken();
+  await db.insert(sessions).values({ tokenHash: hashToken(token) });
+  return token;
+}
+
+export async function isValidSession(cookieValue: string | undefined): Promise<boolean> {
+  if (!cookieValue) return false;
+  const [row] = await db
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(eq(sessions.tokenHash, hashToken(cookieValue)))
+    .limit(1);
+  if (!row) return false;
+  // Fire-and-forget touch so an idle session can be expired later by a
+  // background sweep without blocking the request path on a DB write.
+  // A failed touch shouldn't crash the process; log and move on.
+  db.update(sessions)
+    .set({ lastUsedAt: new Date() })
+    .where(eq(sessions.id, row.id))
+    .catch((err) => logger.warn({ err }, "session: lastUsedAt touch failed"));
+  return true;
 }
 
 // Apply at root scope. Registering as a plugin would encapsulate the
@@ -28,7 +57,8 @@ export function applySessionGate(app: FastifyInstance): void {
     const path = request.url.split("?")[0] ?? request.url;
     if (!path.startsWith("/api")) return;
     if (ALLOWLIST.has(path)) return;
-    if (!cookieMatches(request.cookies["fifa_session"])) {
+    const valid = await isValidSession(request.cookies[COOKIE_NAME]);
+    if (!valid) {
       return reply.send(app.httpErrors.unauthorized("locked"));
     }
   });

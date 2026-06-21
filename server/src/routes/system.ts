@@ -1,16 +1,25 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { db } from "../db/client";
 import { killSwitchState, strategyConfigs } from "../db/schema";
 import { setKillSwitch } from "../safety/killSwitch";
 import { getSecureClient } from "../polymarket/client";
 import { stopWorkers, restartWorkers } from "../workers/runner";
 import { env } from "../env";
-import { cookieMatches } from "../auth/session";
+import { COOKIE_NAME, createSession, isValidSession } from "../auth/session";
 import { logger } from "../logger";
 
 const unlockBody = z.object({ secret: z.string() });
+
+// Compare via fixed-size sha256 digests so the timing-safe compare gets
+// equal-length buffers — the prior length-check-then-compare leaked
+// SESSION_SECRET length on a mismatch (P2 #29).
+function constantTimeSecretMatch(provided: string, expected: string): boolean {
+  const a = createHash("sha256").update(provided).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
+}
 
 export async function systemRoutes(app: FastifyInstance): Promise<void> {
   app.post("/unlock", async (request, reply) => {
@@ -18,13 +27,11 @@ export async function systemRoutes(app: FastifyInstance): Promise<void> {
     if (!parsed.success) {
       return reply.send(app.httpErrors.badRequest("secret required"));
     }
-    const a = Buffer.from(parsed.data.secret);
-    const b = Buffer.from(env.SESSION_SECRET);
-    const match = a.length === b.length && timingSafeEqual(a, b);
-    if (!match) {
+    if (!constantTimeSecretMatch(parsed.data.secret, env.SESSION_SECRET)) {
       return reply.send(app.httpErrors.unauthorized("invalid secret"));
     }
-    reply.setCookie("fifa_session", env.SESSION_SECRET, {
+    const token = await createSession();
+    reply.setCookie(COOKIE_NAME, token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
       sameSite: "lax",
@@ -34,7 +41,7 @@ export async function systemRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get("/session", async (request) => {
-    return { unlocked: cookieMatches(request.cookies["fifa_session"]) };
+    return { unlocked: await isValidSession(request.cookies[COOKIE_NAME]) };
   });
 
   // GET /kill-switch — current state

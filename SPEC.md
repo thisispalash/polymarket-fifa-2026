@@ -84,7 +84,7 @@ P1 wave:
 - [x] P1 #15 — orderReconcile unknown status spins forever
 - [x] P1 #16 — partial fills logged with original size
 - [x] P1 #17 — OrderRejected meta dropped from 409 body
-- [ ] P1 #18 — cookie value IS env.SESSION_SECRET (unrevocable)
+- [x] P1 #18 — cookie value IS env.SESSION_SECRET (unrevocable)
 - [x] P1 #19 — watchlist toggle sends marketId in slug field
 - [x] P1 #20 — portfolioSync only fetches firstPage()
 - [x] P1 #21 — unbounded priceHistory inserts (writes removed; table kept for future history endpoint)
