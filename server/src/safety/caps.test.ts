@@ -5,6 +5,7 @@ mock.module("../db/client", () => ({ db: {} }));
 mock.module("../db/schema", () => ({
   strategyConfigs: {},
   strategyExecutions: {},
+  orderLog: {},
 }));
 
 const { wouldBreachCap, computeOrderCostUsdc } = await import("./caps");

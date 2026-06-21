@@ -1,9 +1,10 @@
-import { and, eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import type { SubmitOrderInput } from "@fifa/shared";
 import { db } from "../db/client";
-import { strategyConfigs, strategyExecutions } from "../db/schema";
+import { strategyConfigs, strategyExecutions, orderLog } from "../db/schema";
 
 const CAP_WINDOW_MS = 24 * 60 * 60 * 1_000;
+const INFLIGHT_STATUSES = ["submitted", "placed", "pending"] as const;
 
 export class OrderRejected extends Error {
   readonly reason: "cap_breach" | "kill_switch";
@@ -38,18 +39,50 @@ export async function assertWithinCap(strategyId: number, costUsdc: number): Pro
   const cap = cfgRows[0]?.capitalCap ?? 0;
   const windowStart = new Date(Date.now() - CAP_WINDOW_MS);
 
-  const spendRows = await db
-    .select({ sumSpent: sql<number>`coalesce(sum(size * price), 0)` })
-    .from(strategyExecutions)
-    .where(
-      and(
-        eq(strategyExecutions.strategyId, strategyId),
-        gt(strategyExecutions.createdAt, windowStart),
+  // Filled spend: rolling 24h window on definitive fills.
+  // In-flight commitment: every unfilled order is live capital regardless
+  // of age, so no window — orders that are still resting against a 25h-old
+  // limit ladder still tie up cap.
+  const [spendRows, inflightRows] = await Promise.all([
+    db
+      .select({ sumSpent: sql<number>`coalesce(sum(size * price), 0)` })
+      .from(strategyExecutions)
+      .where(
+        and(
+          eq(strategyExecutions.strategyId, strategyId),
+          gt(strategyExecutions.createdAt, windowStart),
+        ),
       ),
-    );
+    db
+      .select({
+        sumInflight: sql<number>`coalesce(sum(
+          case
+            when side = 'BUY' and type = 'MARKET' then size
+            when type = 'LIMIT' then size * coalesce(price, 0)
+            else 0
+          end
+        ), 0)`,
+      })
+      .from(orderLog)
+      .where(
+        and(
+          eq(orderLog.strategyId, strategyId),
+          inArray(orderLog.status, [...INFLIGHT_STATUSES]),
+        ),
+      ),
+  ]);
 
-  const sumSpent = spendRows[0]?.sumSpent ?? 0;
+  const filledSpent = Number(spendRows[0]?.sumSpent ?? 0);
+  const inflightSpent = Number(inflightRows[0]?.sumInflight ?? 0);
+  const sumSpent = filledSpent + inflightSpent;
   if (wouldBreachCap(sumSpent, cap, costUsdc)) {
-    throw new OrderRejected("cap_breach", { strategyId, sumSpent, cap, costUsdc });
+    throw new OrderRejected("cap_breach", {
+      strategyId,
+      sumSpent,
+      filledSpent,
+      inflightSpent,
+      cap,
+      costUsdc,
+    });
   }
 }
