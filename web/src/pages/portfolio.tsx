@@ -12,7 +12,6 @@ type PortfolioPosition = {
   marketId: string;
   conditionId: string;
   outcome: string;
-  side: string;
   shares: number;
   avgPrice: number;
   currentPrice: number;

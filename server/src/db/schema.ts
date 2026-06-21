@@ -45,7 +45,6 @@ export const positionsCache = fifa.table(
     marketId: text("market_id").notNull(),
     conditionId: text("condition_id").notNull(),
     outcome: text("outcome").notNull(),
-    side: text("side").notNull(),
     shares: doublePrecision("shares").notNull(),
     avgPrice: doublePrecision("avg_price").notNull(),
     currentPrice: doublePrecision("current_price").notNull(),

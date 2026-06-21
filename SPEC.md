@@ -75,7 +75,7 @@ Legend: `[x]` done · `[~]` in progress · `[ ]` pending
 
 P1 wave:
 - [x] P1 #8 — worker health shape (Record vs array)
-- [ ] P1 #9 — position side stored as "BUY" instead of "YES"/"NO"
+- [x] P1 #9 — position side stored as "BUY" instead of "YES"/"NO"
 - [ ] P1 #10 — cap accounting ignores in-flight orders
 - [ ] P1 #11 — TOCTOU on cap check + insert
 - [ ] P1 #12 — arbScan divides by zero on ask=0
@@ -86,7 +86,7 @@ P1 wave:
 - [ ] P1 #17 — OrderRejected meta dropped from 409 body
 - [ ] P1 #18 — cookie value IS env.SESSION_SECRET (unrevocable)
 - [x] P1 #19 — watchlist toggle sends marketId in slug field
-- [ ] P1 #20 — portfolioSync only fetches firstPage()
+- [x] P1 #20 — portfolioSync only fetches firstPage()
 - [ ] P1 #21 — unbounded priceHistory inserts
 - [ ] P1 #22 — rules consumed after submitOrder (double-fire risk)
 - [ ] P1 #23 — no SDK call timeouts in workers

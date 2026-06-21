@@ -1,5 +1,3 @@
-export type Side = "YES" | "NO";
-
 export type OutcomeToken = {
   tokenId: string;
   outcome: string;
@@ -27,7 +25,6 @@ export type Position = {
   conditionId: string;
   tokenId: string;
   outcome: string;
-  side: Side;
   shares: number;
   avgPrice: number;
   currentPrice: number;

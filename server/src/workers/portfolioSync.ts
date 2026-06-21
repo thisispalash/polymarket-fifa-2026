@@ -16,45 +16,48 @@ async function run(): Promise<void> {
   const pub = getPublicClient();
 
   // --- positions ---
+  // The SDK paginator is an AsyncIterable; `for await` drains every page.
+  // `firstPage()` alone would silently hide rows beyond the first page.
   const paginator = client.listPositions();
-  const page = await paginator.firstPage();
-  const positions = page.items as Awaited<ReturnType<typeof paginator.firstPage>>["items"];
+  let positionCount = 0;
 
-  for (const pos of positions) {
-    const tokenId = pos.tokenId ?? null;
-    if (!tokenId) continue;
-    const shares = pos.size != null ? parseFloat(pos.size) : 0;
-    if (shares <= 0) continue;
-    const avgP = pos.avgPrice != null ? parseFloat(pos.avgPrice) : 0;
+  for await (const page of paginator) {
+    for (const pos of page.items) {
+      const tokenId = pos.tokenId ?? null;
+      if (!tokenId) continue;
+      const shares = pos.size != null ? parseFloat(pos.size) : 0;
+      if (shares <= 0) continue;
+      positionCount += 1;
+      const avgP = pos.avgPrice != null ? parseFloat(pos.avgPrice) : 0;
 
-    let currentPrice = pos.curPrice != null ? parseFloat(pos.curPrice) : 0;
-    try {
-      const mid = await pub.fetchMidpoint({ tokenId });
-      currentPrice = parseFloat(mid);
-    } catch {
-      // fallback to curPrice already set
+      let currentPrice = pos.curPrice != null ? parseFloat(pos.curPrice) : 0;
+      try {
+        const mid = await pub.fetchMidpoint({ tokenId });
+        currentPrice = parseFloat(mid);
+      } catch {
+        // fallback to curPrice already set
+      }
+
+      await db
+        .insert(positionsCache)
+        .values({
+          tokenId,
+          marketId: pos.conditionId ?? "",
+          conditionId: pos.conditionId ?? "",
+          outcome: pos.outcome ?? "unknown",
+          shares,
+          avgPrice: avgP,
+          currentPrice,
+          question: pos.title ?? pos.slug ?? "",
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: positionsCache.tokenId,
+          set: { shares, avgPrice: avgP, currentPrice, updatedAt: new Date() },
+        });
+
+      await db.insert(priceHistory).values({ tokenId, price: currentPrice, recordedAt: new Date() });
     }
-
-    await db
-      .insert(positionsCache)
-      .values({
-        tokenId,
-        marketId: pos.conditionId ?? "",
-        conditionId: pos.conditionId ?? "",
-        outcome: pos.outcome ?? "unknown",
-        side: "BUY",
-        shares,
-        avgPrice: avgP,
-        currentPrice,
-        question: pos.title ?? pos.slug ?? "",
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: positionsCache.tokenId,
-        set: { shares, avgPrice: avgP, currentPrice, updatedAt: new Date() },
-      });
-
-    await db.insert(priceHistory).values({ tokenId, price: currentPrice, recordedAt: new Date() });
   }
 
   // --- balances ---
@@ -68,7 +71,7 @@ async function run(): Promise<void> {
     await db.update(balancesCache).set({ usdc, updatedAt: new Date() }).where(eq(balancesCache.id, existing[0]!.id));
   }
 
-  logger.debug({ positionCount: positions.length, usdc }, "portfolioSync complete");
+  logger.debug({ positionCount, usdc }, "portfolioSync complete");
 }
 
 export const portfolioSyncWorker: WorkerDef = {
