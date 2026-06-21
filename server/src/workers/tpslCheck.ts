@@ -72,24 +72,33 @@ async function handleTpSl(row: RuleRow): Promise<void> {
   const trigger = shouldFire(rule, pos.currentPrice);
   if (!trigger) return;
 
+  // Claim the rule BEFORE submitting. The CAS-style predicate
+  // (`status = 'active'`) makes a duplicate tick a no-op. A process
+  // crash between submit and consume previously double-fired; now the
+  // rule is consumed first and a hard SDK error leaves it consumed for
+  // operator review. Cap-rejection rewinds so the next tick can retry.
+  const [claimed] = await db.update(strategyRules)
+    .set({ status: "consumed", lastFiredAt: new Date() })
+    .where(and(eq(strategyRules.id, row.ruleId), eq(strategyRules.status, "active")))
+    .returning({ id: strategyRules.id });
+  if (!claimed) return;
+
   try {
     await submitOrder(
       buildSellOrder(rule, pos, trigger),
       { strategyId: row.strategyId },
     );
+    logger.info({ ruleId: row.ruleId, trigger }, "tpslCheck: tp_sl fired");
   } catch (err) {
     if (err instanceof OrderRejected) {
-      logger.warn({ ruleId: row.ruleId, reason: err.message }, "tpslCheck: order rejected");
+      logger.warn({ ruleId: row.ruleId, reason: err.message }, "tpslCheck: order rejected, reverting rule to active");
+      await db.update(strategyRules)
+        .set({ status: "active" })
+        .where(eq(strategyRules.id, row.ruleId));
       return;
     }
     throw err;
   }
-
-  await db
-    .update(strategyRules)
-    .set({ status: "consumed", lastFiredAt: new Date() })
-    .where(eq(strategyRules.id, row.ruleId));
-  logger.info({ ruleId: row.ruleId, trigger }, "tpslCheck: tp_sl fired");
 }
 
 async function handleTrailingStop(row: RuleRow): Promise<void> {
@@ -100,29 +109,41 @@ async function handleTrailingStop(row: RuleRow): Promise<void> {
 
   const { updatedRule, fire } = trailingStopTick(rule, pos.currentPrice);
 
-  if (fire) {
-    try {
-      await submitOrder(
-        { tokenId: pos.tokenId, side: "SELL", type: "MARKET", size: pos.shares },
-        { strategyId: row.strategyId },
-      );
-    } catch (err) {
-      if (err instanceof OrderRejected) {
-        logger.warn({ ruleId: row.ruleId, reason: err.message }, "tpslCheck: trailing_stop order rejected");
-        return;
-      }
-      throw err;
-    }
-    await db
-      .update(strategyRules)
-      .set({ status: "consumed", lastFiredAt: new Date(), rule: updatedRule as unknown as Record<string, unknown> })
-      .where(eq(strategyRules.id, row.ruleId));
-    logger.info({ ruleId: row.ruleId }, "tpslCheck: trailing_stop fired");
-  } else {
+  if (!fire) {
     await db
       .update(strategyRules)
       .set({ rule: updatedRule as unknown as Record<string, unknown> })
       .where(eq(strategyRules.id, row.ruleId));
+    return;
+  }
+
+  // Claim+consume the rule and persist the ratcheted state in one update.
+  // Same rationale as handleTpSl: prior crash window double-fired.
+  const [claimed] = await db.update(strategyRules)
+    .set({
+      status: "consumed",
+      lastFiredAt: new Date(),
+      rule: updatedRule as unknown as Record<string, unknown>,
+    })
+    .where(and(eq(strategyRules.id, row.ruleId), eq(strategyRules.status, "active")))
+    .returning({ id: strategyRules.id });
+  if (!claimed) return;
+
+  try {
+    await submitOrder(
+      { tokenId: pos.tokenId, side: "SELL", type: "MARKET", size: pos.shares },
+      { strategyId: row.strategyId },
+    );
+    logger.info({ ruleId: row.ruleId }, "tpslCheck: trailing_stop fired");
+  } catch (err) {
+    if (err instanceof OrderRejected) {
+      logger.warn({ ruleId: row.ruleId, reason: err.message }, "tpslCheck: trailing_stop rejected, reverting rule to active");
+      await db.update(strategyRules)
+        .set({ status: "active" })
+        .where(eq(strategyRules.id, row.ruleId));
+      return;
+    }
+    throw err;
   }
 }
 
@@ -134,6 +155,16 @@ async function handleScaleOut(row: RuleRow): Promise<void> {
 
   const { firingLegs, updatedRule } = checkLegs(rule, pos.currentPrice, pos.shares);
 
+  if (firingLegs.length === 0) return;
+
+  // Persist consumed flags BEFORE firing. A crash mid-loop previously
+  // re-fired already-sent legs on the next tick. Cap-rejected legs stay
+  // marked consumed by design — operator reactivates if they care.
+  await db
+    .update(strategyRules)
+    .set({ rule: updatedRule as unknown as Record<string, unknown> })
+    .where(eq(strategyRules.id, row.ruleId));
+
   for (const leg of firingLegs) {
     try {
       await submitOrder(
@@ -143,17 +174,12 @@ async function handleScaleOut(row: RuleRow): Promise<void> {
       logger.info({ ruleId: row.ruleId, legIndex: leg.index, size: leg.size }, "tpslCheck: scale_out leg fired");
     } catch (err) {
       if (err instanceof OrderRejected) {
-        logger.warn({ ruleId: row.ruleId, legIndex: leg.index, reason: err.message }, "tpslCheck: scale_out order rejected");
+        logger.warn({ ruleId: row.ruleId, legIndex: leg.index, reason: err.message }, "tpslCheck: scale_out leg rejected (leg stays consumed)");
       } else {
         throw err;
       }
     }
   }
-
-  await db
-    .update(strategyRules)
-    .set({ rule: updatedRule as unknown as Record<string, unknown> })
-    .where(eq(strategyRules.id, row.ruleId));
 }
 
 export { getPosition };

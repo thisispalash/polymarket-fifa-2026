@@ -77,6 +77,13 @@ async function handleLadder(ruleId: number, strategyId: number, rule: LimitLadde
   // Step 1: sync fill status from orderLog
   let current = await syncFilledRungs(ruleId, strategyId, rule);
 
+  // Persist sync results immediately so a crash before the place loop
+  // doesn't lose "rung X filled" info we already discovered.
+  await db
+    .update(strategyRules)
+    .set({ rule: current as unknown as Record<string, unknown> })
+    .where(eq(strategyRules.id, ruleId));
+
   // Step 2: place rungs needing placement (new + top-up), respecting maxActive cap
   const toPlace = [
     ...rungsNeedingPlacement(current),
@@ -103,6 +110,14 @@ async function handleLadder(ruleId: number, strategyId: number, rule: LimitLadde
         { strategyId },
       );
       current = withOrderId(current, index, result.orderId);
+      // Persist after each successful place. A crash before the next
+      // iteration previously dropped already-placed orderIds, so the next
+      // tick re-placed the same rung. Per-rung persistence costs one
+      // extra UPDATE per place — negligible at v1 rung counts.
+      await db
+        .update(strategyRules)
+        .set({ rule: current as unknown as Record<string, unknown> })
+        .where(eq(strategyRules.id, ruleId));
       logger.info({ ruleId, index, orderId: result.orderId, price: rung.price }, "ladderManage: rung placed");
     } catch (err) {
       if (err instanceof OrderRejected) {
@@ -112,12 +127,6 @@ async function handleLadder(ruleId: number, strategyId: number, rule: LimitLadde
       }
     }
   }
-
-  // Step 3: persist updated rule state
-  await db
-    .update(strategyRules)
-    .set({ rule: current as unknown as Record<string, unknown> })
-    .where(eq(strategyRules.id, ruleId));
 }
 
 export const ladderManageWorker: WorkerDef = {
