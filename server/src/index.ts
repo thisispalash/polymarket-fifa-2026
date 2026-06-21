@@ -15,7 +15,7 @@ import { ordersRoutes } from "./routes/orders";
 import { strategiesRoutes } from "./routes/strategies";
 import { rulesRoutes } from "./routes/rules";
 import { arbsRoutes } from "./routes/arbs";
-import { startWorkers, getWorkerHealth } from "./workers/runner";
+import { startWorkers, stopWorkers, getWorkerHealth } from "./workers/runner";
 import { portfolioSyncWorker } from "./workers/portfolioSync";
 import { orderReconcileWorker } from "./workers/orderReconcile";
 import { arbScanWorker } from "./workers/arbScan";
@@ -87,3 +87,24 @@ try {
   app.log.error(error, "Failed to start server");
   process.exit(1);
 }
+
+// Railway sends SIGTERM ahead of each redeploy. Stop scheduling worker
+// ticks first so nothing new fires mid-shutdown, then drain HTTP. The
+// `shuttingDown` latch keeps a duplicate signal (Ctrl+C twice, runner
+// re-sending) from racing the close path.
+let shuttingDown = false;
+async function shutdown(signal: NodeJS.Signals): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  app.log.info({ signal }, "shutdown: stopping workers");
+  stopWorkers();
+  try {
+    await app.close();
+    app.log.info("shutdown: fastify closed cleanly");
+  } catch (err) {
+    app.log.error({ err }, "shutdown: fastify close failed");
+  }
+  process.exit(0);
+}
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));

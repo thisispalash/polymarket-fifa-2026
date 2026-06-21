@@ -80,7 +80,7 @@ P1 wave:
 - [ ] P1 #11 — TOCTOU on cap check + insert
 - [x] P1 #12 — arbScan divides by zero on ask=0
 - [x] P1 #13 — arb opportunities not deduped
-- [ ] P1 #14 — no SIGTERM/SIGINT graceful shutdown
+- [x] P1 #14 — no SIGTERM/SIGINT graceful shutdown
 - [ ] P1 #15 — orderReconcile unknown status spins forever
 - [ ] P1 #16 — partial fills logged with original size
 - [x] P1 #17 — OrderRejected meta dropped from 409 body
