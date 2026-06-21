@@ -1,4 +1,8 @@
-import { AssetType } from "@polymarket/client";
+// AssetType is declared in @polymarket/client's d.ts (via `export *`) but the
+// runtime JS bundle doesn't actually re-export it — only the bindings package
+// does. Pulling it from @polymarket/bindings/clob directly so it resolves at
+// module load. SDK packaging bug; revisit when beta.8 ships.
+import { AssetType } from "@polymarket/bindings/clob";
 import { fetchBalanceAllowance } from "@polymarket/client/actions";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
