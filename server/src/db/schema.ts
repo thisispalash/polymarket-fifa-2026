@@ -135,6 +135,13 @@ export const strategyExecutions = fifa.table(
   },
   (t) => ({
     byStrategy: index("strategy_executions_strategy_idx").on(t.strategyId),
+    // Composite for the cap-window SUM in caps.ts — filters by strategyId
+    // AND createdAt > windowStart on every submitOrder. Single-column
+    // strategyId index forces a scan of all rows for that strategy.
+    byStrategyTime: index("strategy_executions_strategy_time_idx").on(
+      t.strategyId,
+      t.createdAt,
+    ),
   })
 );
 
@@ -202,5 +209,10 @@ export const orderLog = fifa.table(
   (t) => ({
     byOrderId: index("order_log_order_id_idx").on(t.orderId),
     byToken: index("order_log_token_idx").on(t.tokenId),
+    // Cap-window inflight query: WHERE strategy_id = $1 AND status IN (...)
+    byStrategyStatus: index("order_log_strategy_status_idx").on(
+      t.strategyId,
+      t.status,
+    ),
   })
 );

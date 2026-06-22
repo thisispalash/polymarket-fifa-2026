@@ -99,6 +99,7 @@ P2 wave:
 - [x] P2 #33 — arb executed-flag failure surfaces warning instead of 200/silent
 - [x] P2 #34 — log portfolioSync midpoint fetch fallback at debug level
 - [x] orderReconcile — normalize MARKET BUY notional + record partial-on-cancel
+- [x] P2 #31 — composite indexes for cap window + inflight queries (re-run migrate script)
 
 ## Scope
 

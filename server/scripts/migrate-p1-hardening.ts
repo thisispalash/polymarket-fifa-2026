@@ -1,13 +1,16 @@
 /**
- * One-shot migration for the P1 hardening wave schema deltas.
+ * One-shot migration for the P1 + P2 hardening wave schema deltas.
  *
  * drizzle-kit push 0.28 errored with 42P16 ("column 'id' is in a primary
- * key") trying to alter unrelated PK columns. The two changes we actually
+ * key") trying to alter unrelated PK columns. The changes we actually
  * need are mechanical, so we issue them directly with IF EXISTS / IF NOT
  * EXISTS so the script is idempotent.
  *
- *   1. Drop fifa.positions_cache.side  (P1 #9  — column was unused)
- *   2. Create fifa.sessions table       (P1 #18 — opaque session tokens)
+ *   P1 #9   — Drop fifa.positions_cache.side
+ *   P1 #18  — Create fifa.sessions table
+ *   P2 #31  — Composite indexes for cap accounting hot path
+ *               strategy_executions(strategy_id, created_at)
+ *               order_log(strategy_id, status)
  *
  * This script intentionally bypasses src/env.ts so it only needs
  * DATABASE_URL — running a schema migration shouldn't require the trading
@@ -45,7 +48,19 @@ async function main(): Promise<void> {
       ON fifa.sessions (token_hash)
   `;
 
-  console.log("migrate: P1 hardening schema deltas applied");
+  console.log("migrate: creating strategy_executions_strategy_time_idx if absent");
+  await sql`
+    CREATE INDEX IF NOT EXISTS strategy_executions_strategy_time_idx
+      ON fifa.strategy_executions (strategy_id, created_at)
+  `;
+
+  console.log("migrate: creating order_log_strategy_status_idx if absent");
+  await sql`
+    CREATE INDEX IF NOT EXISTS order_log_strategy_status_idx
+      ON fifa.order_log (strategy_id, status)
+  `;
+
+  console.log("migrate: hardening schema deltas applied");
 }
 
 main()
