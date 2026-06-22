@@ -95,6 +95,7 @@ P1 wave (deploy step: `cd server && bun run scripts/migrate-p1-hardening.ts` app
 
 P2 wave:
 - [x] P2 #26 — exchange-side reject returns 409 (OrderRejected) instead of 500
+- [x] P2 #28 — SPA fallback handles missing index.html without leaking path
 
 ## Scope
 

@@ -71,9 +71,16 @@ if (env.NODE_ENV === "production") {
     wildcard: false,
   });
   // SPA fallback: send any unmatched GET to index.html so React Router can route it.
-  app.setNotFoundHandler((request, reply) => {
+  // sendFile can throw (build artifact missing, FS read fails). Without a
+  // guard, Fastify renders a 500 with the absolute file path in the body.
+  app.setNotFoundHandler(async (request, reply) => {
     if (request.method === "GET" && !request.url.startsWith("/api")) {
-      return reply.sendFile("index.html");
+      try {
+        return await reply.sendFile("index.html");
+      } catch (err) {
+        app.log.error({ err, url: request.url }, "SPA fallback: index.html unreadable");
+        return reply.status(503).send({ error: "PWA bundle unavailable; check server build" });
+      }
     }
     return reply.status(404).send({ error: "not found" });
   });
