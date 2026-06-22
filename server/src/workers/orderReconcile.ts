@@ -8,6 +8,37 @@ import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
 type LocalStatus = "placed" | "filled" | "cancelled" | "expired" | "unknown";
+type OrderLogRow = typeof orderLog.$inferSelect;
+
+// Normalize an SDK fill into (shares, execPrice) so the SUM(size*price)
+// formula in caps.ts always yields USDC notional regardless of order
+// type. Two pitfalls this guards against:
+//   1. MARKET BUY stores row.size as USDC (the SDK takes `amount`, not
+//      `shares`). Multiplying that by fill price halves the notional.
+//   2. row.price is null for MARKET orders. Falling back to the exec
+//      price keeps the formula meaningful.
+function normalizedExecution(
+  row: OrderLogRow,
+  order: OpenOrder,
+): { shares: number; execPrice: number } {
+  const parsedExecPrice = parseFloat(order.price);
+  const execPrice = Number.isFinite(parsedExecPrice) && parsedExecPrice > 0
+    ? parsedExecPrice
+    : row.price ?? 0;
+
+  const sdkShares = parseFloat(order.sizeMatched);
+  if (Number.isFinite(sdkShares) && sdkShares > 0) {
+    return { shares: sdkShares, execPrice };
+  }
+
+  // Fallback when sizeMatched is unparseable. MARKET BUY's row.size is
+  // USDC, so divide by exec price to recover shares; everything else
+  // already stores row.size as shares.
+  if (row.side === "BUY" && row.type === "MARKET" && execPrice > 0) {
+    return { shares: row.size / execPrice, execPrice };
+  }
+  return { shares: row.size, execPrice };
+}
 
 /**
  * Map SDK status string → our local status. Unrecognized values map to
@@ -67,27 +98,41 @@ async function run(): Promise<void> {
 
     logger.info({ orderId, prev: row.status, next: newStatus }, "orderReconcile: status updated");
 
-    if (newStatus === "filled" && row.strategyId != null) {
-      // Record the actually-matched size from the SDK, not the originally-
-      // submitted row.size. For a partial that finally fills, the two can
-      // differ; using row.size double-counts the unmatched remainder
-      // against the cap window.
-      const matchedSize = parseFloat(order.sizeMatched);
-      const executionSize = Number.isFinite(matchedSize) && matchedSize > 0 ? matchedSize : row.size;
+    // Terminal-state recorders. Each transition fires at most once because
+    // `newStatus === row.status` continues earlier and these are leaf states.
+    //   filled    → always record (shares matched > 0 by definition)
+    //   cancelled → record IF the order had a partial fill before being
+    //               yanked. Without this branch the matched portion never
+    //               counts against the strategy cap, leaving phantom room.
+    const partialOnCancel =
+      newStatus === "cancelled" &&
+      Number.isFinite(parseFloat(order.sizeMatched)) &&
+      parseFloat(order.sizeMatched) > 0;
+
+    if ((newStatus === "filled" || partialOnCancel) && row.strategyId != null) {
+      const { shares, execPrice } = normalizedExecution(row, order);
       await db.insert(strategyExecutions).values({
         strategyId: row.strategyId,
         marketId: null,
         tokenId: row.tokenId,
         side: row.side,
-        price: row.price ?? parseFloat(order.price),
-        size: executionSize,
+        price: execPrice,
+        size: shares,
         orderId,
         pnl: 0,
-        note: "reconciled fill",
+        note: partialOnCancel ? "partial fill on cancel" : "reconciled fill",
         createdAt: new Date(),
       });
       logger.info(
-        { orderId, strategyId: row.strategyId, executionSize, originalSize: row.size },
+        {
+          orderId,
+          strategyId: row.strategyId,
+          shares,
+          execPrice,
+          notionalUsdc: shares * execPrice,
+          originalSize: row.size,
+          partialOnCancel,
+        },
         "orderReconcile: strategy execution recorded",
       );
     }
