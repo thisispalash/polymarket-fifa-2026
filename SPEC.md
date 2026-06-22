@@ -97,6 +97,7 @@ P2 wave:
 - [x] P2 #26 — exchange-side reject returns 409 (OrderRejected) instead of 500
 - [x] P2 #28 — SPA fallback handles missing index.html without leaking path
 - [x] P2 #33 — arb executed-flag failure surfaces warning instead of 200/silent
+- [x] P2 #34 — log portfolioSync midpoint fetch fallback at debug level
 
 ## Scope
 

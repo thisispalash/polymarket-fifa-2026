@@ -35,8 +35,10 @@ async function run(): Promise<void> {
       try {
         const mid = await withTimeout(pub.fetchMidpoint({ tokenId }), SDK_READ_TIMEOUT_MS, `fetchMidpoint(${tokenId})`);
         currentPrice = parseFloat(mid);
-      } catch {
-        // fallback to curPrice already set
+      } catch (err) {
+        // Stale-price fallback. Log so the operator can spot a degraded
+        // orderbook feed instead of TP/SL silently firing off curPrice.
+        logger.debug({ tokenId, err }, "portfolioSync: fetchMidpoint failed; using stale curPrice");
       }
 
       await db
