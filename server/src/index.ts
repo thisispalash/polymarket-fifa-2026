@@ -5,7 +5,7 @@ import fastifyStatic from "@fastify/static";
 import { resolve } from "node:path";
 import { env } from "./env";
 import { loggerOptions } from "./logger";
-import { verifyDb } from "./db/push";
+import { cachedVerifyDb } from "./db/health";
 import { applySessionGate } from "./auth/session";
 import { systemRoutes } from "./routes/system";
 import { marketsRoutes } from "./routes/markets";
@@ -36,7 +36,7 @@ await app.register(async (api) => {
   // operator just needs to run `bun run db:push`. Failing the healthcheck
   // there creates a chicken-and-egg with Railway's deploy gating.
   api.get("/healthz", async () => {
-    const result = await verifyDb();
+    const result = await cachedVerifyDb();
     if (result.status === "db_unreachable") {
       throw api.httpErrors.serviceUnavailable(result.error ?? "Database unreachable");
     }
