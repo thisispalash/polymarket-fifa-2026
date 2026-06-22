@@ -101,6 +101,7 @@ P2 wave:
 - [x] orderReconcile — normalize MARKET BUY notional + record partial-on-cancel
 - [x] P2 #31 — composite indexes for cap window + inflight queries (re-run migrate script)
 - [x] P2 #27 + P3 — cache /healthz DB probe (5s TTL) and move verifyDb out of CLI module
+- [x] P2 #30 — parallelize orderReconcile SDK fan-out via bounded-concurrency helper
 
 ## Scope
 

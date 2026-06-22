@@ -4,8 +4,13 @@ import { db } from "../db/client";
 import { orderLog, strategyExecutions } from "../db/schema";
 import { getSecureClient } from "../polymarket/client";
 import { withTimeout, SDK_READ_TIMEOUT_MS } from "../safety/timeout";
+import { mapWithConcurrency } from "../safety/concurrency";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
+
+// Bound SDK fan-out so a backlog of pending orders doesn't fan out to 100
+// concurrent fetchOrder calls and trip Polymarket's rate limits.
+const RECONCILE_CONCURRENCY = 6;
 
 type LocalStatus = "placed" | "filled" | "cancelled" | "expired" | "unknown";
 type OrderLogRow = typeof orderLog.$inferSelect;
@@ -69,17 +74,27 @@ async function run(): Promise<void> {
 
   const client = await getSecureClient();
 
-  for (const row of pending) {
-    const orderId = row.orderId;
-    if (!orderId) continue; // already guarded above, keeps TS happy
+  // Phase 1 — fan SDK fetches out concurrently. Failures are surfaced per
+  // row so a single hang doesn't stall the rest of the batch.
+  const fetched = await mapWithConcurrency(pending, RECONCILE_CONCURRENCY, async (row) => {
+    const orderId = row.orderId!;
+    return withTimeout(client.fetchOrder({ orderId }), SDK_READ_TIMEOUT_MS, `fetchOrder(${orderId})`);
+  });
 
-    let order: OpenOrder;
-    try {
-      order = await withTimeout(client.fetchOrder({ orderId }), SDK_READ_TIMEOUT_MS, `fetchOrder(${orderId})`);
-    } catch (err) {
-      logger.warn({ orderId, err }, "orderReconcile: fetchOrder failed or timed out, skipping row");
+  // Phase 2 — apply DB updates sequentially. The writes are independent
+  // across rows, but keeping them serial caps the connection-pool fan-out
+  // and keeps the worker easy to reason about under load.
+  for (let i = 0; i < pending.length; i++) {
+    const row = pending[i]!;
+    const orderId = row.orderId;
+    if (!orderId) continue;
+
+    const fetchResult = fetched[i]!;
+    if (fetchResult.status === "rejected") {
+      logger.warn({ orderId, err: fetchResult.reason }, "orderReconcile: fetchOrder failed or timed out, skipping row");
       continue;
     }
+    const order: OpenOrder = fetchResult.value;
 
     const newStatus = mapStatus(order.status);
     if (newStatus === "unknown") {
