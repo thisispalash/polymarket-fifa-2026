@@ -116,5 +116,11 @@ export async function submitOrder(
   await db.update(orderLog)
     .set({ status: "error", errorMessage: errMsg, responsePayload: response as unknown as Record<string, unknown>, updatedAt: new Date() })
     .where(eq(orderLog.id, logId));
-  throw new Error(errMsg);
+  // Throw OrderRejected (not bare Error) so the HTTP layer renders a 409
+  // with the exchange's code/message instead of a 500 "Internal Server
+  // Error" toast on routine bad-price rejects.
+  throw new OrderRejected("exchange_reject", {
+    code: response.code,
+    message: response.message,
+  });
 }

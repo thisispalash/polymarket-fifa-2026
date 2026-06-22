@@ -93,6 +93,9 @@ P1 wave (deploy step: `cd server && bun run scripts/migrate-p1-hardening.ts` app
 - [x] P1 #24 — autoExecute flag unreachable (no route)
 - [x] P1 #25 — killSwitch triggeredAt preserved on re-enable
 
+P2 wave:
+- [x] P2 #26 — exchange-side reject returns 409 (OrderRejected) instead of 500
+
 ## Scope
 
 - **Single-user** to start (the developer). Multi-user is a future option but no auth in v1.

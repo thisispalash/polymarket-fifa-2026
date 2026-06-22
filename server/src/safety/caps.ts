@@ -15,10 +15,12 @@ export type DbOrTx = typeof db | PgTransaction<any, any, any>;
 const CAP_WINDOW_MS = 24 * 60 * 60 * 1_000;
 const INFLIGHT_STATUSES = ["submitted", "placed", "pending"] as const;
 
+export type OrderRejectReason = "cap_breach" | "kill_switch" | "exchange_reject";
+
 export class OrderRejected extends Error {
-  readonly reason: "cap_breach" | "kill_switch";
+  readonly reason: OrderRejectReason;
   readonly meta: Record<string, unknown>;
-  constructor(reason: "cap_breach" | "kill_switch", meta: Record<string, unknown> = {}) {
+  constructor(reason: OrderRejectReason, meta: Record<string, unknown> = {}) {
     const detail = Object.keys(meta).length === 0
       ? ""
       : ` (${Object.entries(meta).map(([k, v]) => `${k}=${v}`).join(", ")})`;
