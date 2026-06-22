@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
-import { api } from "@/lib/api";
+import { api, newClientOrderId } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Sparkline } from "@/components/sparkline";
 import { queryClient } from "@/lib/queryClient";
@@ -35,6 +35,9 @@ export function MarketDetailPage() {
   const [size, setSize] = useState("10");
   const [limitPrice, setLimitPrice] = useState("");
   const [orderError, setOrderError] = useState<string | null>(null);
+  // Stable per buy-dialog session — rapid double-tap on Submit collapses
+  // to one server-side order. Rotates when the dialog opens again.
+  const [clientOrderId, setClientOrderId] = useState<string>(() => newClientOrderId());
 
   const { data: market, isLoading } = useQuery<MarketDetail>({
     queryKey: ["market-detail", id],
@@ -80,6 +83,7 @@ export function MarketDetailPage() {
     setSize("10");
     setLimitPrice("");
     setOrderError(null);
+    setClientOrderId(newClientOrderId());
     setBuyOpen(true);
   };
 
@@ -91,6 +95,7 @@ export function MarketDetailPage() {
       type: limitPrice ? "LIMIT" : "MARKET",
       size: parseFloat(size),
       price: limitPrice ? parseFloat(limitPrice) : undefined,
+      clientOrderId,
     };
     submitOrder.mutate(input);
   };

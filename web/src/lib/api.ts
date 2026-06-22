@@ -62,3 +62,11 @@ export const api = {
     return request<T>("DELETE", path);
   },
 };
+
+// crypto.randomUUID is available on all evergreen targets the PWA runs on
+// (iOS Safari 16+, Chrome 92+). Used to stamp POST /orders with a stable
+// idempotency key so a mobile double-tap collapses to one order. Caller
+// scopes the lifetime — call once per submit intent, reuse on retries.
+export function newClientOrderId(): string {
+  return crypto.randomUUID();
+}

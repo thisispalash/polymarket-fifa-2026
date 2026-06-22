@@ -60,6 +60,21 @@ async function main(): Promise<void> {
       ON fifa.order_log (strategy_id, status)
   `;
 
+  console.log("migrate: adding fifa.order_log.client_order_id column if absent");
+  await sql`
+    ALTER TABLE fifa.order_log
+      ADD COLUMN IF NOT EXISTS client_order_id TEXT
+  `;
+
+  console.log("migrate: creating order_log_client_order_id_unique partial index if absent");
+  // Partial unique index — only enforces when the column is non-null, so
+  // internal order paths that don't carry a key still insert freely.
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS order_log_client_order_id_unique
+      ON fifa.order_log (client_order_id)
+      WHERE client_order_id IS NOT NULL
+  `;
+
   console.log("migrate: hardening schema deltas applied");
 }
 

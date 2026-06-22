@@ -51,6 +51,10 @@ export type SubmitOrderInput = {
   price?: number;
   size: number;
   strategyId?: number;
+  // Optional client-supplied idempotency key. When the same key arrives
+  // twice (mobile double-tap, retry storm), the second call returns the
+  // first call's result instead of placing a second order.
+  clientOrderId?: string;
 };
 
 export type StrategyKind =

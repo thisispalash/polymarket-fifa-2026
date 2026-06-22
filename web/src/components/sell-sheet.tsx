@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, newClientOrderId } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { SubmitOrderInput } from "@fifa/shared";
@@ -33,6 +33,10 @@ export function SellSheet({ position, open, onClose, onSuccess }: Props) {
   const [selectedPct, setSelectedPct] = useState<number>(1.0);
   const [limitPrice, setLimitPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Stable for the lifetime of one open-sheet session. Two taps before the
+  // server has a chance to reply collapse to the same backend order. Reset
+  // on close via key remount (parent passes new `position`).
+  const [clientOrderId] = useState(() => newClientOrderId());
 
   const size = parseFloat((position.shares * selectedPct).toFixed(4));
 
@@ -56,6 +60,7 @@ export function SellSheet({ position, open, onClose, onSuccess }: Props) {
       type: useLimit ? "LIMIT" : "MARKET",
       size: qty,
       price: useLimit && limitPrice ? parseFloat(limitPrice) : undefined,
+      clientOrderId,
     };
     submitOrder.mutate(input);
   };

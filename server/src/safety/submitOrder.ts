@@ -39,6 +39,7 @@ async function reserveOrderRow(
       .values({
         tokenId: input.tokenId, side: input.side, type: input.type,
         price: input.price, size: input.size, strategyId: opts.strategyId,
+        clientOrderId: input.clientOrderId,
         status: "submitted", requestPayload: input as Record<string, unknown>,
       })
       .returning({ id: orderLog.id });
@@ -47,11 +48,67 @@ async function reserveOrderRow(
   }, { isolationLevel: "serializable" });
 }
 
+// Unique-violation on the partial index covering client_order_id. Caught
+// in submitOrder to convert the race into the same idempotent return path
+// as a primary lookup hit.
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "23505"
+  );
+}
+
+interface IdempotentHit {
+  orderId: string;
+  status: string;
+}
+
+// Map an existing order_log row to the same `{orderId, status}` shape
+// submitOrder returns on a successful path. We deliberately surface
+// errored or rejected prior calls instead of "replaying" them — the
+// retry can decide whether to resubmit with a new key.
+async function findIdempotentHit(clientOrderId: string): Promise<IdempotentHit | null> {
+  const [row] = await db
+    .select({ orderId: orderLog.orderId, status: orderLog.status, errorMessage: orderLog.errorMessage })
+    .from(orderLog)
+    .where(eq(orderLog.clientOrderId, clientOrderId))
+    .limit(1);
+  if (!row) return null;
+  if (row.status === "error" || row.status === "cancelled") {
+    throw new OrderRejected("exchange_reject", {
+      clientOrderId,
+      replayedFrom: row.status,
+      message: row.errorMessage ?? "prior attempt with this idempotency key failed",
+    });
+  }
+  if (!row.orderId) {
+    // The prior call has reserved a row but hasn't reached the SDK yet.
+    // Treat this as still-in-flight — telling the client "duplicate" lets
+    // them poll for the eventual state instead of placing a second order.
+    return { orderId: "", status: row.status };
+  }
+  return { orderId: row.orderId, status: row.status };
+}
+
 export async function submitOrder(
   input: SubmitOrderInput,
   opts: SubmitOpts,
-): Promise<{ orderId: string; status: string }> {
+): Promise<{ orderId: string; status: string; idempotentReplay?: boolean }> {
   if (await isKillSwitchEnabled()) throw new OrderRejected("kill_switch");
+
+  // Idempotency primary lookup: if the same client key arrived already,
+  // surface the prior result without touching the SDK or the cap. This is
+  // the common path — the unique-index catch below covers the narrow race
+  // where two duplicate requests reach reserveOrderRow at the same time.
+  if (input.clientOrderId) {
+    const hit = await findIdempotentHit(input.clientOrderId);
+    if (hit) {
+      logger.info({ clientOrderId: input.clientOrderId, orderId: hit.orderId }, "submitOrder: idempotent replay");
+      return { ...hit, idempotentReplay: true };
+    }
+  }
 
   let logId: number;
   try {
@@ -60,6 +117,11 @@ export async function submitOrder(
     if (isSerializationFailure(err)) {
       logger.warn({ strategyId: opts.strategyId }, "submitOrder: serialization conflict, retrying once");
       logId = await reserveOrderRow(input, opts);
+    } else if (isUniqueViolation(err) && input.clientOrderId) {
+      logger.warn({ clientOrderId: input.clientOrderId }, "submitOrder: idempotency race, returning prior row");
+      const hit = await findIdempotentHit(input.clientOrderId);
+      if (hit) return { ...hit, idempotentReplay: true };
+      throw err;
     } else {
       throw err;
     }

@@ -11,6 +11,10 @@ const orderBodySchema = z.object({
   size: z.number().positive(),
   price: z.number().positive().optional(),
   strategyId: z.number().int().positive().optional(),
+  // Mobile double-tap and retry storms collapse to a single order when
+  // the client supplies the same key on every attempt. Length bound keeps
+  // the partial unique index narrow.
+  clientOrderId: z.string().min(8).max(128).optional(),
 });
 
 const cancelParamsSchema = z.object({

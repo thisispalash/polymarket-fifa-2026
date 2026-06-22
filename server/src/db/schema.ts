@@ -199,6 +199,10 @@ export const orderLog = fifa.table(
     price: doublePrecision("price"),
     size: doublePrecision("size").notNull(),
     strategyId: integer("strategy_id"),
+    // Optional client-supplied idempotency key. Indexed UNIQUE WHERE NOT
+    // NULL (created in the migration script) so retries collapse to one
+    // order without forcing every internal order path to carry a key.
+    clientOrderId: text("client_order_id"),
     status: text("status").default("submitted").notNull(),
     requestPayload: jsonb("request_payload"),
     responsePayload: jsonb("response_payload"),
