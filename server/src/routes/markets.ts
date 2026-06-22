@@ -1,5 +1,8 @@
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { and, asc, eq, gt } from "drizzle-orm";
+import { db } from "../db/client";
+import { priceHistory } from "../db/schema";
 import { listFifaMarkets, getMarketDetail } from "../polymarket/markets";
 import type { SdkMarket } from "../polymarket/markets";
 import type { Market } from "@fifa/shared";
@@ -43,6 +46,26 @@ export async function marketsRoutes(app: FastifyInstance): Promise<void> {
     const { pageSize, cursor } = parsed.data;
     const { items, nextCursor } = await listFifaMarkets({ pageSize, cursor });
     return { items: items.map(toDto), nextCursor };
+  });
+
+  // Sparkline data source — recent price samples written by
+  // portfolioSync. Returns ascending by time so the line renders
+  // left-to-right without re-sorting on the client.
+  const historyQuery = z.object({
+    hours: z.coerce.number().int().min(1).max(168).default(24),
+  });
+  app.get<{ Params: { tokenId: string } }>("/price-history/:tokenId", async (request, reply) => {
+    const { tokenId } = request.params;
+    if (!tokenId) return reply.send(app.httpErrors.badRequest("tokenId required"));
+    const parsed = historyQuery.safeParse(request.query);
+    if (!parsed.success) return reply.send(app.httpErrors.badRequest(parsed.error.message));
+    const since = new Date(Date.now() - parsed.data.hours * 60 * 60 * 1_000);
+    const rows = await db
+      .select({ price: priceHistory.price, recordedAt: priceHistory.recordedAt })
+      .from(priceHistory)
+      .where(and(eq(priceHistory.tokenId, tokenId), gt(priceHistory.recordedAt, since)))
+      .orderBy(asc(priceHistory.recordedAt));
+    return rows.map((r) => ({ price: r.price, t: r.recordedAt.toISOString() }));
   });
 
   app.get<{ Params: { id: string } }>("/markets/:id", async (request, reply) => {

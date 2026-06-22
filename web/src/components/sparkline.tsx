@@ -2,38 +2,28 @@ import { useQuery } from "@tanstack/react-query";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { api } from "@/lib/api";
 
-type DetailOutcome = {
-  tokenId: string;
-  name: string;
-  bestBid: number | null;
-  bestAsk: number | null;
-  book: {
-    bids: { price: number; size: number }[];
-    asks: { price: number; size: number }[];
-  };
-};
-
-type MarketDetail = {
-  id: string;
-  question: string;
-  outcomes: DetailOutcome[];
-};
+type HistoryPoint = { price: number; t: string };
 
 type Props = {
-  marketId: string;
+  tokenId: string;
+  hours?: number;
   height?: number;
 };
 
-export function Sparkline({ marketId, height = 48 }: Props) {
-  const { data } = useQuery<MarketDetail>({
-    queryKey: ["market-detail", marketId],
-    queryFn: () => api.get<MarketDetail>(`/api/markets/${marketId}`),
-    staleTime: 10_000,
+// Sparkline backed by the priceHistory table. portfolioSync samples once
+// a minute per held token, retention is 7d, so a fresh token will render
+// flat until the first sample lands. When no rows exist yet, we draw a
+// neutral 0.5 line so the layout still occupies its slot.
+export function Sparkline({ tokenId, hours = 24, height = 48 }: Props) {
+  const { data } = useQuery<HistoryPoint[]>({
+    queryKey: ["price-history", tokenId, hours],
+    queryFn: () => api.get<HistoryPoint[]>(`/api/price-history/${tokenId}?hours=${hours}`),
+    enabled: !!tokenId,
+    staleTime: 30_000,
   });
 
-  const bids = data?.outcomes[0]?.book.bids ?? [];
-  const points = bids.length > 0
-    ? bids.slice(0, 12).map((b, i) => ({ i, price: b.price }))
+  const points = (data ?? []).length > 0
+    ? data!.map((d, i) => ({ i, price: d.price }))
     : [{ i: 0, price: 0.5 }, { i: 1, price: 0.5 }];
 
   return (

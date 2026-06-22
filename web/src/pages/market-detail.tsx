@@ -111,7 +111,11 @@ export function MarketDetailPage() {
       </header>
 
       <div className="px-4 pt-4 pb-2">
-        <Sparkline marketId={market.id} height={150} />
+        {market.outcomes[0]?.tokenId ? (
+          <Sparkline tokenId={market.outcomes[0].tokenId} height={150} />
+        ) : (
+          <div className="h-[150px] bg-muted/50 rounded" />
+        )}
       </div>
 
       <div className="px-4 py-3">

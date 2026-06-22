@@ -107,6 +107,7 @@ P2 wave:
 - [x] P2 #37 + #38 — delete yesnoArb identity wrapper and App.tsx
 - [x] P2 #40 + #41 + auto-execute UI — settings uses api wrapper, drops stub creds section, strategy cards toggle auto-execute
 - [x] P2 #32 + #44 — shared ruleSchemas registry; workers parseRule() instead of `as` casts
+- [x] P2 #35 + #36 + #39 — priceHistory sampler (1/min, 7d retention) + /price-history/:tokenId route; Sparkline reads it; dropped 0% badge and home placeholder div
 
 ## Scope
 

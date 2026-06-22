@@ -56,8 +56,6 @@ export function HomePage() {
             className="w-full text-left rounded-xl border bg-card p-4 space-y-2 active:scale-[0.98] transition-transform"
           >
             <p className="text-sm font-medium leading-snug line-clamp-2">{item.question}</p>
-            {/* Sparkline placeholder — replaced by <Sparkline> in U30 */}
-            <div className="h-8 bg-muted rounded" />
             <p className="text-xs text-muted-foreground">
               Added {new Date(item.addedAt).toLocaleDateString()}
             </p>

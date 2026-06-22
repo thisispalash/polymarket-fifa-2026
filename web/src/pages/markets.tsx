@@ -70,7 +70,6 @@ export function MarketsPage() {
                 ) : (
                   <span className="text-xs text-muted-foreground">—</span>
                 )}
-                <p className="text-xs text-muted-foreground">0%</p>
               </div>
             </button>
           );

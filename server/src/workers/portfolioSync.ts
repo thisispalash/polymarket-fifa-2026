@@ -4,13 +4,23 @@
 // module load. SDK packaging bug; revisit when beta.8 ships.
 import { AssetType } from "@polymarket/bindings/clob";
 import { fetchBalanceAllowance } from "@polymarket/client/actions";
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { db } from "../db/client";
-import { positionsCache, balancesCache } from "../db/schema";
+import { positionsCache, balancesCache, priceHistory } from "../db/schema";
 import { getSecureClient, getPublicClient } from "../polymarket/client";
 import { withTimeout, SDK_READ_TIMEOUT_MS } from "../safety/timeout";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
+
+// Down-sample price writes so we get usable sparkline data without the
+// 17k-rows/day-per-position blowup that motivated P1 #21. One row per
+// minute per token is plenty for a 24h sparkline.
+const PRICE_SAMPLE_INTERVAL_MS = 60_000;
+// Retention horizon: 7d is far enough to cover the sparkline range and
+// short enough that priceHistory stays small on a personal-scale DB.
+const PRICE_RETENTION_MS = 7 * 24 * 60 * 60 * 1_000;
+const lastSampleAt = new Map<string, number>();
+let lastRetentionAt = 0;
 
 async function run(): Promise<void> {
   const client = await getSecureClient();
@@ -39,6 +49,20 @@ async function run(): Promise<void> {
         // Stale-price fallback. Log so the operator can spot a degraded
         // orderbook feed instead of TP/SL silently firing off curPrice.
         logger.debug({ tokenId, err }, "portfolioSync: fetchMidpoint failed; using stale curPrice");
+      }
+
+      // Sparkline sampler. Skip when we already wrote a point for this
+      // token within the throttle window. Errors stay quiet — the price
+      // history is a UX nicety, not load-bearing for any trading path.
+      const lastAt = lastSampleAt.get(tokenId) ?? 0;
+      const now = Date.now();
+      if (currentPrice > 0 && now - lastAt >= PRICE_SAMPLE_INTERVAL_MS) {
+        lastSampleAt.set(tokenId, now);
+        try {
+          await db.insert(priceHistory).values({ tokenId, price: currentPrice });
+        } catch (err) {
+          logger.debug({ tokenId, err }, "portfolioSync: priceHistory insert failed");
+        }
       }
 
       await db
@@ -74,6 +98,26 @@ async function run(): Promise<void> {
     await db.insert(balancesCache).values({ usdc, updatedAt: new Date() });
   } else {
     await db.update(balancesCache).set({ usdc, updatedAt: new Date() }).where(eq(balancesCache.id, existing[0]!.id));
+  }
+
+  // Retention sweep. Folded into portfolioSync (vs a separate worker)
+  // so we don't spawn a tick just to delete a handful of rows. Run at
+  // most hourly — a few thousand stale rows lingering doesn't matter.
+  const now = Date.now();
+  if (now - lastRetentionAt > 60 * 60 * 1_000) {
+    lastRetentionAt = now;
+    try {
+      const cutoff = new Date(now - PRICE_RETENTION_MS);
+      const deleted = await db
+        .delete(priceHistory)
+        .where(lt(priceHistory.recordedAt, cutoff))
+        .returning({ id: priceHistory.id });
+      if (deleted.length > 0) {
+        logger.info({ deleted: deleted.length }, "portfolioSync: priceHistory retention sweep");
+      }
+    } catch (err) {
+      logger.warn({ err }, "portfolioSync: priceHistory retention sweep failed");
+    }
   }
 
   logger.debug({ positionCount, usdc }, "portfolioSync complete");
