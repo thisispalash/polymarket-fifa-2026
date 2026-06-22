@@ -105,6 +105,7 @@ P2 wave:
 - [x] P2 #42 — clientOrderId idempotency on POST /orders + mobile flow keys
 - [x] sessions — hourly sweep removes rows idle for 14d
 - [x] P2 #37 + #38 — delete yesnoArb identity wrapper and App.tsx
+- [x] P2 #40 + #41 + auto-execute UI — settings uses api wrapper, drops stub creds section, strategy cards toggle auto-execute
 
 ## Scope
 

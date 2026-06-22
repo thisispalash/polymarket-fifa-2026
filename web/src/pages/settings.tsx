@@ -32,7 +32,9 @@ export function SettingsPage() {
 
   const { data: health } = useQuery<HealthResponse>({
     queryKey: ["healthz"],
-    queryFn: () => fetch("/api/healthz").then((r) => r.json()) as Promise<HealthResponse>,
+    // Route through the api wrapper so a 401 redirects to /unlock instead
+    // of silently rendering an empty health panel.
+    queryFn: () => api.get<HealthResponse>("/api/healthz"),
     refetchInterval: 10_000,
   });
 
@@ -169,15 +171,6 @@ export function SettingsPage() {
           <p className="text-xs text-muted-foreground">
             Session cookie is HttpOnly — it cannot be cleared from the browser. Re-locking just returns you to the unlock page.
           </p>
-        </section>
-
-        {/* Re-init creds */}
-        <section className="rounded-xl border bg-card p-4 space-y-2">
-          <h2 className="text-sm font-semibold">Re-bootstrap credentials</h2>
-          <Button variant="outline" className="w-full" disabled>
-            Re-derive L2 creds (planned)
-          </Button>
-          <p className="text-xs text-muted-foreground">Not wired in v1.</p>
         </section>
 
       </main>

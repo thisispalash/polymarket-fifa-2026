@@ -29,6 +29,12 @@ function StrategyCard({ s }: { s: StrategyConfig }) {
     onSuccess: invalidate,
   });
 
+  const setAutoExecute = useMutation({
+    mutationFn: (autoExecute: boolean) =>
+      api.post(`/api/strategies/${s.id}/auto-execute`, { autoExecute }),
+    onSuccess: invalidate,
+  });
+
   const isArb = (s.kind === "dutch_arb" || s.kind === "yesno_arb") as boolean;
   const pnlColor = s.realizedPnl >= 0 ? "text-green-600" : "text-red-600";
 
@@ -64,7 +70,23 @@ function StrategyCard({ s }: { s: StrategyConfig }) {
         {isArb && (
           <div>
             <p className="text-muted-foreground">Auto-execute</p>
-            <p className="font-semibold text-muted-foreground italic">wire backend ↗</p>
+            <button
+              role="switch"
+              aria-checked={s.autoExecute}
+              onClick={() => setAutoExecute.mutate(!s.autoExecute)}
+              disabled={setAutoExecute.isPending}
+              className={cn(
+                "mt-1 relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none disabled:opacity-50",
+                s.autoExecute ? "bg-primary" : "bg-muted",
+              )}
+            >
+              <span
+                className={cn(
+                  "pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow ring-0 transition-transform",
+                  s.autoExecute ? "translate-x-4" : "translate-x-0",
+                )}
+              />
+            </button>
           </div>
         )}
       </div>
