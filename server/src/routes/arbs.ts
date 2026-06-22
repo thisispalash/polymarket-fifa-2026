@@ -130,11 +130,27 @@ export async function arbsRoutes(app: FastifyInstance): Promise<void> {
       }
     }
 
-    // 6. Mark executed
-    await db
-      .update(arbOpportunities)
-      .set({ executed: true, executedAt: new Date() })
-      .where(eq(arbOpportunities.id, oppId));
+    // 6. Mark executed. A DB transient here leaves the row at executed=false
+    //    even though the legs are live, which lets the user double-execute on
+    //    a second click. Log loud and warn the caller — the row will be
+    //    backfilled the next time the row is touched, but the user should not
+    //    retry.
+    try {
+      await db
+        .update(arbOpportunities)
+        .set({ executed: true, executedAt: new Date() })
+        .where(eq(arbOpportunities.id, oppId));
+    } catch (err) {
+      logger.error(
+        { oppId, err, placedOrderIds, legs: results.length },
+        "arb/execute: legs placed but failed to mark opportunity executed — do not retry",
+      );
+      return reply.status(200).send({
+        executed: true,
+        results,
+        warning: "legs placed but executed flag not persisted — do not retry",
+      });
+    }
 
     logger.info({ oppId, legs: results.length }, "arb executed");
     return { executed: true, results };
