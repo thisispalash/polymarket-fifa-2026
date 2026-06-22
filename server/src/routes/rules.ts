@@ -3,6 +3,7 @@ import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { strategyConfigs, strategyRules } from "../db/schema";
+import { ruleSchemaByKind, type RuleKind } from "../strategies/ruleSchemas";
 import { logger } from "../logger";
 
 const idParamsSchema = z.object({ id: z.coerce.number().int().positive() });
@@ -10,48 +11,6 @@ const ruleParamsSchema = z.object({
   id: z.coerce.number().int().positive(),
   rid: z.coerce.number().int().positive(),
 });
-
-// Rule shapes per strategy kind
-const tpSlRuleSchema = z.object({
-  tokenId: z.string().min(1),
-  takeProfit: z.number().min(0).max(1).optional(),
-  stopLoss: z.number().min(0).max(1).optional(),
-  slippageBps: z.number().int().min(0).optional(),
-});
-
-const trailingStopRuleSchema = z.object({
-  tokenId: z.string().min(1),
-  trailPct: z.number().positive(),
-  highWaterMark: z.number().optional(),
-  triggerPrice: z.number().optional(),
-});
-
-const scaleOutRuleSchema = z.object({
-  tokenId: z.string().min(1),
-  legs: z.array(z.object({ pct: z.number().positive(), atPrice: z.number().positive(), consumed: z.boolean().default(false) })).min(1),
-});
-
-const limitLadderRuleSchema = z.object({
-  marketId: z.string().min(1),
-  tokenId: z.string().min(1),
-  rungs: z.array(z.object({
-    price: z.number().positive(), size: z.number().positive(),
-    side: z.enum(["BUY", "SELL"]), orderId: z.string().optional(), filled: z.boolean().optional(),
-  })).min(1),
-  topUp: z.boolean(),
-  maxActive: z.number().int().positive(),
-});
-
-const ruleSchemaByKind = {
-  tp_sl: tpSlRuleSchema,
-  trailing_stop: trailingStopRuleSchema,
-  scale_out: scaleOutRuleSchema,
-  limit_ladder: limitLadderRuleSchema,
-  dutch_arb: z.object({}).passthrough(),
-  yesno_arb: z.object({}).passthrough(),
-} as const;
-
-type KindKey = keyof typeof ruleSchemaByKind;
 
 export async function rulesRoutes(app: FastifyInstance): Promise<void> {
   app.get<{ Params: { id: string } }>("/strategies/:id/rules", async (request, reply) => {
@@ -69,8 +28,11 @@ export async function rulesRoutes(app: FastifyInstance): Promise<void> {
       .from(strategyConfigs).where(eq(strategyConfigs.id, params.data.id)).limit(1);
     if (strategy.length === 0) return reply.send(app.httpErrors.notFound("Strategy not found"));
 
-    const kind = strategy[0]!.kind as KindKey;
-    const schema = ruleSchemaByKind[kind] ?? z.object({}).passthrough();
+    const kind = strategy[0]!.kind as RuleKind;
+    const schema = ruleSchemaByKind[kind];
+    if (!schema) {
+      return reply.send(app.httpErrors.badRequest(`unsupported strategy kind: ${kind}`));
+    }
     const parsed = schema.safeParse(request.body);
     if (!parsed.success) return reply.send(app.httpErrors.badRequest(parsed.error.message));
 

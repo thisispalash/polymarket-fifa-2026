@@ -10,6 +10,7 @@ import {
   withOrderId,
   withFilled,
 } from "../strategies/limitLadder";
+import { parseRule } from "../strategies/ruleSchemas";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
@@ -30,8 +31,10 @@ async function run(): Promise<void> {
     );
 
   for (const row of rules) {
+    const rule = parseRule("limit_ladder", row.rule, row.ruleId);
+    if (!rule) continue;
     try {
-      await handleLadder(row.ruleId, row.strategyId, row.rule as LimitLadderRule);
+      await handleLadder(row.ruleId, row.strategyId, rule);
     } catch (err) {
       logger.error({ ruleId: row.ruleId, err }, "ladderManage: per-rule error");
     }

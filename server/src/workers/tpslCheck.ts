@@ -1,11 +1,11 @@
 import { eq, and } from "drizzle-orm";
-import type { TpSlRule, TrailingStopRule, ScaleOutRule } from "@fifa/shared";
 import { db } from "../db/client";
 import { strategyRules, strategyConfigs, positionsCache } from "../db/schema";
 import { submitOrder, OrderRejected } from "../safety/submitOrder";
 import { shouldFire, buildSellOrder } from "../strategies/tpsl";
 import { tick as trailingStopTick } from "../strategies/trailingStop";
 import { checkLegs } from "../strategies/scaleOut";
+import { parseRule } from "../strategies/ruleSchemas";
 import { logger } from "../logger";
 import type { WorkerDef } from "./runner";
 
@@ -64,7 +64,8 @@ async function getPosition(tokenId: string | null) {
 }
 
 async function handleTpSl(row: RuleRow): Promise<void> {
-  const rule = row.rule as TpSlRule & { tokenId?: string };
+  const rule = parseRule("tp_sl", row.rule, row.ruleId);
+  if (!rule) return;
   const tokenId = row.tokenId ?? rule.tokenId ?? null;
   const pos = await getPosition(tokenId);
   if (!pos) return;
@@ -102,7 +103,8 @@ async function handleTpSl(row: RuleRow): Promise<void> {
 }
 
 async function handleTrailingStop(row: RuleRow): Promise<void> {
-  const rule = row.rule as TrailingStopRule & { tokenId?: string };
+  const rule = parseRule("trailing_stop", row.rule, row.ruleId);
+  if (!rule) return;
   const tokenId = row.tokenId ?? rule.tokenId ?? null;
   const pos = await getPosition(tokenId);
   if (!pos) return;
@@ -148,8 +150,9 @@ async function handleTrailingStop(row: RuleRow): Promise<void> {
 }
 
 async function handleScaleOut(row: RuleRow): Promise<void> {
-  const rule = row.rule as ScaleOutRule & { tokenId?: string };
-  const tokenId = row.tokenId ?? rule.tokenId ?? null;
+  const rule = parseRule("scale_out", row.rule, row.ruleId);
+  if (!rule) return;
+  const tokenId = row.tokenId ?? null;
   const pos = await getPosition(tokenId);
   if (!pos) return;
 
