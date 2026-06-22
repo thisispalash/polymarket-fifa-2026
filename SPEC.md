@@ -104,6 +104,7 @@ P2 wave:
 - [x] P2 #30 — parallelize orderReconcile SDK fan-out via bounded-concurrency helper
 - [x] P2 #42 — clientOrderId idempotency on POST /orders + mobile flow keys
 - [x] sessions — hourly sweep removes rows idle for 14d
+- [x] P2 #37 + #38 — delete yesnoArb identity wrapper and App.tsx
 
 ## Scope
 
