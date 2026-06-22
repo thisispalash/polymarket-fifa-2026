@@ -103,6 +103,7 @@ P2 wave:
 - [x] P2 #27 + P3 — cache /healthz DB probe (5s TTL) and move verifyDb out of CLI module
 - [x] P2 #30 — parallelize orderReconcile SDK fan-out via bounded-concurrency helper
 - [x] P2 #42 — clientOrderId idempotency on POST /orders + mobile flow keys
+- [x] sessions — hourly sweep removes rows idle for 14d
 
 ## Scope
 

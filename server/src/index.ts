@@ -21,6 +21,7 @@ import { orderReconcileWorker } from "./workers/orderReconcile";
 import { arbScanWorker } from "./workers/arbScan";
 import { tpslCheckWorker } from "./workers/tpslCheck";
 import { ladderManageWorker } from "./workers/ladderManage";
+import { sessionSweepWorker } from "./workers/sessionSweep";
 
 const app = Fastify({
   logger: loggerOptions,
@@ -89,7 +90,7 @@ if (env.NODE_ENV === "production") {
 try {
   await app.listen({ host: "0.0.0.0", port: env.PORT });
   app.log.info(`Server listening on 0.0.0.0:${env.PORT}`);
-  startWorkers([portfolioSyncWorker, orderReconcileWorker, arbScanWorker, tpslCheckWorker, ladderManageWorker]);
+  startWorkers([portfolioSyncWorker, orderReconcileWorker, arbScanWorker, tpslCheckWorker, ladderManageWorker, sessionSweepWorker]);
 } catch (error) {
   app.log.error(error, "Failed to start server");
   process.exit(1);
