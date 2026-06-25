@@ -41,8 +41,6 @@ async function run(): Promise<void> {
       if (!tokenId) continue;
       const shares = pos.size != null ? parseFloat(pos.size) : 0;
       if (shares <= 0) continue;
-      positionCount += 1;
-      seen.add(tokenId);
       const avgP = pos.avgPrice != null ? parseFloat(pos.avgPrice) : 0;
 
       let currentPrice = pos.curPrice != null ? parseFloat(pos.curPrice) : 0;
@@ -54,6 +52,19 @@ async function run(): Promise<void> {
         // orderbook feed instead of TP/SL silently firing off curPrice.
         logger.debug({ tokenId, err }, "portfolioSync: fetchMidpoint failed; using stale curPrice");
       }
+
+      // Drop resolved/closed positions from the active portfolio. The wallet
+      // keeps reporting settled shares until they're redeemed: winners carry
+      // redeemable=true, and a resolved market's price pins to 0 (loss) or 1
+      // (win) — an active market's live midpoint never sits exactly at either
+      // bound. Skipped tokens stay out of `seen`, so the reconcile sweep below
+      // deletes their stale cache rows.
+      const resolved =
+        pos.redeemable === true || currentPrice <= 0 || currentPrice >= 1;
+      if (resolved) continue;
+
+      positionCount += 1;
+      seen.add(tokenId);
 
       // Sparkline sampler. Skip when we already wrote a point for this
       // token within the throttle window. Errors stay quiet — the price

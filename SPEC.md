@@ -121,6 +121,7 @@ UI design overhaul (impeccable audit 2026-06-24):
 
 Portfolio data fixes (code-review 2026-06-24; deploy step: `cd server && bun run scripts/migrate-portfolio-slug.ts`):
 - [x] #1 — portfolioSync reconcile sweep deletes cache rows for positions the wallet no longer holds (closed/sold positions were lingering with stale shares + frozen price)
+- [x] #1b — also skip resolved positions the wallet still reports until redeemed (redeemable winners + markets whose price pinned to 0/1); reconcile then drops them from the active portfolio
 - [x] #2 — store position `slug` + resolve market detail by id-or-slug so portfolio position links open the right market; market-detail keys the watchlist off the resolved Gamma market id
 - [x] #3 — portfolio hero shows true Account value (available USDC + positions value) instead of positions-only
 
