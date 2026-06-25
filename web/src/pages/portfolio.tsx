@@ -67,7 +67,7 @@ export function PortfolioPage() {
           <div className="rounded-xl border bg-card p-3">
             <p className="text-xs text-muted-foreground">Unrealized PnL</p>
             <p className={cn("text-xl font-bold tabular-nums",
-              balances.totalUnrealizedPnl >= 0 ? "text-green-600" : "text-red-600"
+              balances.totalUnrealizedPnl >= 0 ? "text-profit" : "text-loss"
             )}>
               {fmt$(balances.totalUnrealizedPnl)}
             </p>
@@ -124,7 +124,7 @@ export function PortfolioPage() {
               <div>
                 <p className="text-xs text-muted-foreground">PnL</p>
                 <p className={cn("text-sm font-semibold tabular-nums",
-                  p.unrealizedPnl >= 0 ? "text-green-600" : "text-red-600"
+                  p.unrealizedPnl >= 0 ? "text-profit" : "text-loss"
                 )}>
                   {fmt$(p.unrealizedPnl)}
                 </p>

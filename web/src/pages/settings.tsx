@@ -73,7 +73,7 @@ export function SettingsPage() {
         <section className="rounded-xl border bg-card p-4 space-y-3">
           <h2 className="text-sm font-semibold">System health</h2>
           <div className="flex items-center gap-2">
-            <span className={cn("h-2 w-2 rounded-full", health?.ok ? "bg-green-500" : "bg-red-500")} />
+            <span className={cn("h-2 w-2 rounded-full", health?.ok ? "bg-success" : "bg-danger")} />
             <span className="text-xs">{health?.ok ? "OK" : "Degraded"}</span>
             <span className="text-xs text-muted-foreground ml-auto">DB: {health?.db ?? "—"}</span>
           </div>
@@ -81,11 +81,11 @@ export function SettingsPage() {
             <div className="divide-y text-xs">
               {health!.workers!.map((w) => (
                 <div key={w.name} className="flex items-center py-1.5 gap-2">
-                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", w.lastRunOk ? "bg-green-500" : "bg-red-500")} />
+                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", w.lastRunOk ? "bg-success" : "bg-danger")} />
                   <span className="flex-1 font-mono">{w.name}</span>
                   <span className="text-muted-foreground">{fmt(w.lastRunAt)}</span>
                   {w.lastError && (
-                    <span className="text-red-600 truncate max-w-[120px]">{w.lastError}</span>
+                    <span className="text-danger truncate max-w-[120px]">{w.lastError}</span>
                   )}
                 </div>
               ))}
@@ -97,15 +97,15 @@ export function SettingsPage() {
         <section className="rounded-xl border bg-card p-4 space-y-3">
           <h2 className="text-sm font-semibold">Kill switch</h2>
           {ks?.enabled ? (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm">
-              <p className="font-semibold text-red-700">Kill switch ACTIVE</p>
-              {ks.reason && <p className="text-red-600 text-xs mt-0.5">{ks.reason}</p>}
+            <div className="rounded-lg bg-danger/10 border border-danger/30 p-3 text-sm">
+              <p className="font-semibold text-danger">Kill switch ACTIVE</p>
+              {ks.reason && <p className="text-danger/80 text-xs mt-0.5">{ks.reason}</p>}
               {ks.triggeredAt && (
-                <p className="text-red-500 text-xs mt-0.5">Triggered {fmt(ks.triggeredAt)}</p>
+                <p className="text-danger/70 text-xs mt-0.5">Triggered {fmt(ks.triggeredAt)}</p>
               )}
             </div>
           ) : (
-            <div className="rounded-lg bg-green-50 border border-green-200 p-2 text-xs text-green-700 font-medium">
+            <div className="rounded-lg bg-success/10 border border-success/30 p-2 text-xs text-success font-medium">
               All clear — no kill switch active
             </div>
           )}

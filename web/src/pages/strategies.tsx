@@ -35,7 +35,7 @@ function StrategyCard({ s }: { s: StrategyConfig }) {
   });
 
   const isArb = (s.kind === "dutch_arb" || s.kind === "yesno_arb") as boolean;
-  const pnlColor = s.realizedPnl >= 0 ? "text-green-600" : "text-red-600";
+  const pnlColor = s.realizedPnl >= 0 ? "text-profit" : "text-loss";
 
   return (
     <div className={cn("rounded-xl border bg-card p-4 space-y-3", !s.enabled && "opacity-60")}>

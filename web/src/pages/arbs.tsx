@@ -68,12 +68,12 @@ function ArbRow({ opp }: { opp: ArbOpportunity }) {
         </div>
         <div>
           <p className="text-muted-foreground">Expected profit</p>
-          <p className="font-semibold tabular-nums text-green-600">+${profit.toFixed(2)}</p>
+          <p className="font-semibold tabular-nums text-profit">+${profit.toFixed(2)}</p>
         </div>
       </div>
 
       {execError && (
-        <p className="text-xs text-red-600">{execError}</p>
+        <p className="text-xs text-destructive">{execError}</p>
       )}
 
       {confirmOpen && (

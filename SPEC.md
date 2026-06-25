@@ -111,6 +111,7 @@ P2 wave:
 
 UI design overhaul (impeccable audit 2026-06-24):
 - [x] P0 — persistent bottom tab bar via `AppShell` layout; Strategies/Settings no longer URL-only orphans
+- [x] P1 — dark-first theme + semantic `profit`/`loss`/`success`/`danger` tokens; replaced 20 hard-coded green/red literals; PnL colors now hit AA contrast; PWA `theme-color` matches
 
 ## Scope
 
