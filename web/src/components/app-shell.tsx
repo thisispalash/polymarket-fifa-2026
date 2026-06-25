@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import {
   Home,
@@ -8,6 +9,18 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Shared fallback for lazily-loaded routes — card-shaped pulses so the swap
+// from skeleton to content doesn't shift layout.
+export function PageFallback() {
+  return (
+    <div className="space-y-3 px-4 py-6">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+      ))}
+    </div>
+  );
+}
 
 const TABS = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -25,7 +38,9 @@ export function AppShell() {
   return (
     <div className="min-h-[100dvh] bg-background">
       <div className="mx-auto max-w-2xl pb-[calc(env(safe-area-inset-bottom)+4.5rem)]">
-        <Outlet />
+        <Suspense fallback={<PageFallback />}>
+          <Outlet />
+        </Suspense>
       </div>
 
       <nav
