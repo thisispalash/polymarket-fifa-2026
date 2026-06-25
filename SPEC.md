@@ -118,6 +118,11 @@ UI design overhaul (impeccable audit 2026-06-24):
 - [x] P3 — buy/sell sheets slide+fade in (tailwindcss-animate) with a global `prefers-reduced-motion` guard; shared `EmptyState` (icon + copy + action) across home/markets/portfolio/arbs
 - [x] Docs — `web/PRODUCT.md` + `web/DESIGN.md` capture register, brand, and the visual token system for impeccable grounding
 
+Portfolio data fixes (code-review 2026-06-24; deploy step: `cd server && bun run scripts/migrate-portfolio-slug.ts`):
+- [x] #1 — portfolioSync reconcile sweep deletes cache rows for positions the wallet no longer holds (closed/sold positions were lingering with stale shares + frozen price)
+- [x] #2 — store position `slug` + resolve market detail by id-or-slug so portfolio position links open the right market; market-detail keys the watchlist off the resolved Gamma market id
+- [x] #3 — portfolio hero shows true Account value (available USDC + positions value) instead of positions-only
+
 ## Scope
 
 - **Single-user** to start (the developer). Multi-user is a future option but no auth in v1.

@@ -52,7 +52,11 @@ export async function getMarketDetail(id: string): Promise<{
 }> {
   const client = getPublicClient();
 
-  const market = await withTimeout(client.fetchMarket({ id }), SDK_READ_TIMEOUT_MS, `fetchMarket(${id})`);
+  // Gamma market ids are numeric strings; anything else (e.g. a position's
+  // URL slug, since the position payload carries no market id) is resolved by
+  // slug. fetchMarket accepts { id } | { slug } | { url }.
+  const request = /^\d+$/.test(id) ? { id } : { slug: id };
+  const market = await withTimeout(client.fetchMarket(request), SDK_READ_TIMEOUT_MS, `fetchMarket(${id})`);
 
   // outcomes.yes / outcomes.no each carry a nullable tokenId
   const outcomeTokens = (

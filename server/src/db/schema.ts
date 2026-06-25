@@ -49,6 +49,9 @@ export const positionsCache = fifa.table(
     avgPrice: doublePrecision("avg_price").notNull(),
     currentPrice: doublePrecision("current_price").notNull(),
     question: text("question").notNull(),
+    // Market URL slug — the position payload carries no Gamma market id, so
+    // the portfolio links to market detail by slug (resolved server-side).
+    slug: text("slug").notNull().default(""),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({

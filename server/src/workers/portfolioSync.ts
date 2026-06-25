@@ -4,7 +4,7 @@
 // module load. SDK packaging bug; revisit when beta.8 ships.
 import { AssetType } from "@polymarket/bindings/clob";
 import { fetchBalanceAllowance } from "@polymarket/client/actions";
-import { eq, lt } from "drizzle-orm";
+import { eq, lt, notInArray } from "drizzle-orm";
 import { db } from "../db/client";
 import { positionsCache, balancesCache, priceHistory } from "../db/schema";
 import { getSecureClient, getPublicClient } from "../polymarket/client";
@@ -31,6 +31,9 @@ async function run(): Promise<void> {
   // `firstPage()` alone would silently hide rows beyond the first page.
   const paginator = client.listPositions();
   let positionCount = 0;
+  // Track tokenIds the wallet still holds so we can drop the rest from the
+  // cache after the sync (see reconcile sweep below).
+  const seen = new Set<string>();
 
   for await (const page of paginator) {
     for (const pos of page.items) {
@@ -39,6 +42,7 @@ async function run(): Promise<void> {
       const shares = pos.size != null ? parseFloat(pos.size) : 0;
       if (shares <= 0) continue;
       positionCount += 1;
+      seen.add(tokenId);
       const avgP = pos.avgPrice != null ? parseFloat(pos.avgPrice) : 0;
 
       let currentPrice = pos.curPrice != null ? parseFloat(pos.curPrice) : 0;
@@ -76,13 +80,27 @@ async function run(): Promise<void> {
           avgPrice: avgP,
           currentPrice,
           question: pos.title ?? pos.slug ?? "",
+          slug: pos.slug ?? "",
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: positionsCache.tokenId,
-          set: { shares, avgPrice: avgP, currentPrice, updatedAt: new Date() },
+          set: { shares, avgPrice: avgP, currentPrice, slug: pos.slug ?? "", updatedAt: new Date() },
         });
     }
+  }
+
+  // Reconcile: drop cache rows for positions the wallet no longer holds.
+  // listPositions only returns open positions, and the loop skips size<=0,
+  // so without this a sold/closed position lingers forever with stale shares
+  // and a frozen price — the root cause of "the portfolio cards are wrong".
+  // Only runs if the loop completed (a thrown SDK error aborts run() before
+  // here), so an empty result is an authoritative "no open positions", not a
+  // transient failure that would wrongly wipe the cache.
+  if (seen.size === 0) {
+    await db.delete(positionsCache);
+  } else {
+    await db.delete(positionsCache).where(notInArray(positionsCache.tokenId, [...seen]));
   }
 
   // --- balances ---
