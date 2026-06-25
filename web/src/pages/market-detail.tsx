@@ -133,16 +133,16 @@ export function MarketDetailPage() {
 
       <div className="px-4 py-3">
         <h2 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Outcomes</h2>
-        <div className="rounded-xl border divide-y overflow-hidden">
+        <div className="rounded-xl border bg-card divide-y overflow-hidden">
           {market.outcomes.map((o) => (
             <div key={o.tokenId} className="flex items-center gap-3 px-4 py-3">
-              <span className="flex-1 text-sm font-medium">{o.name || o.tokenId.slice(0, 8)}</span>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                Bid {o.bestBid != null ? (o.bestBid * 100).toFixed(1) + "¢" : "—"}
-              </span>
-              <span className="text-xs tabular-nums text-muted-foreground">
-                Ask {o.bestAsk != null ? (o.bestAsk * 100).toFixed(1) + "¢" : "—"}
-              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{o.name || o.tokenId.slice(0, 8)}</p>
+                <div className="mt-0.5 flex gap-3 text-xs tabular-nums text-muted-foreground">
+                  <span>Bid {o.bestBid != null ? (o.bestBid * 100).toFixed(1) + "¢" : "—"}</span>
+                  <span>Ask {o.bestAsk != null ? (o.bestAsk * 100).toFixed(1) + "¢" : "—"}</span>
+                </div>
+              </div>
               <Button size="sm" onClick={() => handleBuy(o)} disabled={market.closed}>
                 Buy
               </Button>

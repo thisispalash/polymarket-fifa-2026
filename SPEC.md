@@ -113,6 +113,7 @@ UI design overhaul (impeccable audit 2026-06-24):
 - [x] P0 — persistent bottom tab bar via `AppShell` layout; Strategies/Settings no longer URL-only orphans
 - [x] P1 — dark-first theme + semantic `profit`/`loss`/`success`/`danger` tokens; replaced 20 hard-coded green/red literals; PnL colors now hit AA contrast; PWA `theme-color` matches
 - [x] P1 — a11y: Radix-backed `Switch` (keyboard + visible focus + aria-label), lucide icons replace Unicode glyphs, labeled search/cap/kill-reason inputs, 44px touch targets
+- [x] P2 — layout hierarchy: portfolio balances become one hero panel (value + PnL %), market-detail outcome rows stack name above bid/ask to stop crowding; centered max-w reading column on desktop via `AppShell`
 
 ## Scope
 

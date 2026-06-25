@@ -57,28 +57,37 @@ export function PortfolioPage() {
         <h1 className="text-xl font-bold tracking-tight">Portfolio</h1>
       </header>
 
-      {/* Balance summary */}
+      {/* Balance summary — one hero panel, not four equal cards */}
       {balances && (
-        <div className="px-4 py-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Available USDC</p>
-            <p className="text-xl font-bold tabular-nums">${balances.usdc.toFixed(2)}</p>
-          </div>
-          <div className="rounded-xl border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Unrealized PnL</p>
-            <p className={cn("text-xl font-bold tabular-nums",
-              balances.totalUnrealizedPnl >= 0 ? "text-profit" : "text-loss"
-            )}>
-              {fmt$(balances.totalUnrealizedPnl)}
-            </p>
-          </div>
-          <div className="rounded-xl border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Total exposure</p>
-            <p className="text-base font-semibold tabular-nums">${balances.totalCostBasis.toFixed(2)}</p>
-          </div>
-          <div className="rounded-xl border bg-card p-3">
-            <p className="text-xs text-muted-foreground">Current value</p>
-            <p className="text-base font-semibold tabular-nums">${balances.totalCurrentValue.toFixed(2)}</p>
+        <div className="px-4 py-4">
+          <div className="rounded-2xl border bg-card p-4">
+            <p className="text-xs font-medium text-muted-foreground">Portfolio value</p>
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-3xl font-bold tabular-nums tracking-tight">
+                ${balances.totalCurrentValue.toFixed(2)}
+              </span>
+              <span className={cn("text-sm font-semibold tabular-nums",
+                balances.totalUnrealizedPnl >= 0 ? "text-profit" : "text-loss"
+              )}>
+                {fmt$(balances.totalUnrealizedPnl)}
+                {balances.totalCostBasis > 0 &&
+                  ` (${fmt$((balances.totalUnrealizedPnl / balances.totalCostBasis) * 100)}%)`}
+              </span>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-3 text-center">
+              <div>
+                <p className="text-[11px] text-muted-foreground">Available</p>
+                <p className="text-sm font-semibold tabular-nums">${balances.usdc.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">Exposure</p>
+                <p className="text-sm font-semibold tabular-nums">${balances.totalCostBasis.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-muted-foreground">Positions</p>
+                <p className="text-sm font-semibold tabular-nums">{positions.length}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
