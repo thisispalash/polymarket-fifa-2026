@@ -117,6 +117,7 @@ UI design overhaul (impeccable audit 2026-06-24):
 - [x] P2 — code-split routes via `React.lazy` + Suspense and split recharts/react vendor chunks; initial bundle drops from one 673 KB file to small per-route chunks (recharts 375 KB loads only on market detail)
 - [x] P3 — buy/sell sheets slide+fade in (tailwindcss-animate) with a global `prefers-reduced-motion` guard; shared `EmptyState` (icon + copy + action) across home/markets/portfolio/arbs
 - [x] Docs — `web/PRODUCT.md` + `web/DESIGN.md` capture register, brand, and the visual token system for impeccable grounding
+- [x] Theme — migrated tokens to OKLCH component form (`oklch(var(--x) / <alpha-value>)`); dark neutrals are pure (bg L0.07, fg L0.96), brand azure + profit/loss carry the chroma
 
 Portfolio data fixes (code-review 2026-06-24; deploy step: `cd server && bun run scripts/migrate-portfolio-slug.ts`):
 - [x] #1 — portfolioSync reconcile sweep deletes cache rows for positions the wallet no longer holds (closed/sold positions were lingering with stale shares + frozen price)

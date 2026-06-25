@@ -3,87 +3,88 @@
 @tailwind utilities;
 
 @layer base {
-  /* Light theme is the fallback; the app ships dark-first (see index.html).
-     Semantic profit/loss/success/danger tokens live alongside the shadcn
-     neutrals so financial color is centralized and theme-aware. */
+  /* OKLCH component tokens (L C H) consumed via oklch(var(--x) / <alpha>) in
+     tailwind.config. Light theme is the fallback; the app ships dark-first
+     (see index.html). Neutrals are pure (chroma 0); brand azure + the
+     semantic profit/loss/success/danger tokens carry the only chroma. */
   :root {
-    --background: 210 33% 99%;
-    --foreground: 222 47% 11%;
+    --background: 0.99 0 0;
+    --foreground: 0.2 0 0;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 1 0 0;
+    --card-foreground: 0.2 0 0;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 1 0 0;
+    --popover-foreground: 0.2 0 0;
 
-    --primary: 212 88% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0.52 0.18 250;
+    --primary-foreground: 0.99 0 0;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 0.96 0 0;
+    --secondary-foreground: 0.2 0 0;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 19% 38%;
+    --muted: 0.96 0 0;
+    --muted-foreground: 0.44 0 0;
 
-    --accent: 210 40% 94%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 0.94 0 0;
+    --accent-foreground: 0.2 0 0;
 
-    --destructive: 0 72% 45%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0.55 0.2 25;
+    --destructive-foreground: 0.99 0 0;
 
-    --profit: 142 71% 30%;
-    --profit-foreground: 0 0% 100%;
-    --loss: 0 72% 45%;
-    --loss-foreground: 0 0% 100%;
-    --success: 142 71% 33%;
-    --success-foreground: 0 0% 100%;
-    --danger: 0 72% 45%;
-    --danger-foreground: 0 0% 100%;
+    --profit: 0.52 0.15 150;
+    --profit-foreground: 0.99 0 0;
+    --loss: 0.55 0.2 25;
+    --loss-foreground: 0.99 0 0;
+    --success: 0.52 0.15 150;
+    --success-foreground: 0.99 0 0;
+    --danger: 0.55 0.2 25;
+    --danger-foreground: 0.99 0 0;
 
-    --border: 214 28% 88%;
-    --input: 214 28% 86%;
-    --ring: 212 88% 45%;
+    --border: 0.9 0 0;
+    --input: 0.88 0 0;
+    --ring: 0.52 0.18 250;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222 44% 6%;
-    --foreground: 210 36% 96%;
+    --background: 0.07 0 0;
+    --foreground: 0.96 0 0;
 
-    --card: 222 38% 10%;
-    --card-foreground: 210 36% 96%;
+    --card: 0.11 0 0;
+    --card-foreground: 0.96 0 0;
 
-    --popover: 222 40% 9%;
-    --popover-foreground: 210 36% 96%;
+    --popover: 0.1 0 0;
+    --popover-foreground: 0.96 0 0;
 
-    --primary: 210 92% 56%;
-    --primary-foreground: 222 47% 8%;
+    --primary: 0.62 0.17 250;
+    --primary-foreground: 0.99 0 0;
 
-    --secondary: 222 28% 16%;
-    --secondary-foreground: 210 36% 96%;
+    --secondary: 0.2 0 0;
+    --secondary-foreground: 0.96 0 0;
 
-    --muted: 222 26% 15%;
-    --muted-foreground: 215 22% 68%;
+    --muted: 0.17 0 0;
+    --muted-foreground: 0.71 0 0;
 
-    --accent: 222 28% 18%;
-    --accent-foreground: 210 36% 96%;
+    --accent: 0.22 0 0;
+    --accent-foreground: 0.96 0 0;
 
-    --destructive: 0 74% 60%;
-    --destructive-foreground: 210 36% 98%;
+    --destructive: 0.62 0.2 25;
+    --destructive-foreground: 0.99 0 0;
 
-    --profit: 146 64% 50%;
-    --profit-foreground: 222 47% 8%;
-    --loss: 2 80% 64%;
-    --loss-foreground: 222 47% 8%;
-    --success: 146 64% 48%;
-    --success-foreground: 222 47% 8%;
-    --danger: 2 80% 64%;
-    --danger-foreground: 222 47% 8%;
+    --profit: 0.74 0.17 152;
+    --profit-foreground: 0.16 0 0;
+    --loss: 0.68 0.2 22;
+    --loss-foreground: 0.16 0 0;
+    --success: 0.72 0.17 152;
+    --success-foreground: 0.16 0 0;
+    --danger: 0.68 0.2 22;
+    --danger-foreground: 0.99 0 0;
 
-    --border: 220 24% 18%;
-    --input: 220 22% 20%;
-    --ring: 210 92% 60%;
+    --border: 0.22 0 0;
+    --input: 0.26 0 0;
+    --ring: 0.62 0.17 250;
   }
 }
 
