@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { WorkerHealth } from "@fifa/shared";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -63,9 +63,8 @@ export function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold">Settings</h1>
-        <Link to="/" className="text-sm text-primary">← Home</Link>
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3">
+        <h1 className="text-xl font-bold tracking-tight">Settings</h1>
       </header>
 
       <main className="px-4 py-4 space-y-4">

@@ -53,9 +53,8 @@ export function PortfolioPage() {
 
   return (
     <div className="min-h-screen bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold">Portfolio</h1>
-        <Link to="/" className="text-sm text-primary">← Home</Link>
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3">
+        <h1 className="text-xl font-bold tracking-tight">Portfolio</h1>
       </header>
 
       {/* Balance summary */}

@@ -22,13 +22,9 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* Top nav */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold">FIFA Trader</h1>
-        <nav className="flex gap-4 text-sm">
-          <Link to="/portfolio" className="text-primary font-medium">Portfolio</Link>
-          <Link to="/arbs" className="text-primary font-medium">Arbs</Link>
-          <Link to="/markets" className="text-muted-foreground">Markets</Link>
-        </nav>
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3">
+        <p className="text-xs font-medium text-muted-foreground">FIFA Trader</p>
+        <h1 className="text-xl font-bold tracking-tight">Watchlist</h1>
       </header>
 
       <main className="px-4 py-4 space-y-3">

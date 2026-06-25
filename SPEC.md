@@ -109,6 +109,9 @@ P2 wave:
 - [x] P2 #32 + #44 — shared ruleSchemas registry; workers parseRule() instead of `as` casts
 - [x] P2 #35 + #36 + #39 — priceHistory sampler (1/min, 7d retention) + /price-history/:tokenId route; Sparkline reads it; dropped 0% badge and home placeholder div
 
+UI design overhaul (impeccable audit 2026-06-24):
+- [x] P0 — persistent bottom tab bar via `AppShell` layout; Strategies/Settings no longer URL-only orphans
+
 ## Scope
 
 - **Single-user** to start (the developer). Multi-user is a future option but no auth in v1.
