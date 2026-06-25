@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { ArrowRight, Wallet } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { SellSheet } from "@/components/sell-sheet";
+import { EmptyState } from "@/components/empty-state";
 import { cn } from "@/lib/utils";
 
 type PortfolioPosition = {
@@ -100,7 +102,20 @@ export function PortfolioPage() {
         )}
 
         {!isLoading && positions.length === 0 && (
-          <p className="text-center py-16 text-muted-foreground text-sm">No open positions.</p>
+          <EmptyState
+            icon={Wallet}
+            title="No open positions"
+            description="Positions you buy will show up here with live PnL."
+            action={
+              <Link
+                to="/markets"
+                className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+              >
+                Browse markets
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            }
+          />
         )}
 
         {positions.map((p) => (

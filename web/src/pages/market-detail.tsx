@@ -154,8 +154,8 @@ export function MarketDetailPage() {
       {/* Buy Sheet via Radix Dialog */}
       <Dialog.Root open={buyOpen} onOpenChange={setBuyOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
-          <Dialog.Content className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-2xl p-6 pb-[env(safe-area-inset-bottom)] space-y-4 shadow-xl">
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+          <Dialog.Content className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-2xl rounded-t-2xl bg-background p-6 pb-[env(safe-area-inset-bottom)] space-y-4 shadow-xl duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom">
             <Dialog.Title className="text-base font-semibold">
               Buy {buyOutcome?.name}
             </Dialog.Title>

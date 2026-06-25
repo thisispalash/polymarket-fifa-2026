@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeftRight } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 import { cn } from "@/lib/utils";
 import type { ArbOpportunity } from "@fifa/shared";
 
@@ -120,7 +122,11 @@ export function ArbsPage() {
           </div>
         )}
         {!isLoading && data.length === 0 && (
-          <p className="text-center py-16 text-muted-foreground text-sm">No opportunities detected yet.</p>
+          <EmptyState
+            icon={ArrowLeftRight}
+            title="No opportunities detected"
+            description="Arb scans run continuously — new edges will appear here as they're found."
+          />
         )}
         {data.map((opp) => <ArbRow key={opp.id} opp={opp} />)}
       </main>

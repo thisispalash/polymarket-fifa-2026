@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { api } from "@/lib/api";
+import { EmptyState } from "@/components/empty-state";
 
 type WatchlistItem = {
   id: number;
@@ -38,16 +39,20 @@ export function HomePage() {
         )}
 
         {!isLoading && watchlist.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <p className="text-base">No markets on your watchlist yet.</p>
-            <Link
-              to="/markets"
-              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary"
-            >
-              Browse markets
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-          </div>
+          <EmptyState
+            icon={Star}
+            title="Your watchlist is empty"
+            description="Star markets to track their prices here at a glance."
+            action={
+              <Link
+                to="/markets"
+                className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+              >
+                Browse markets
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            }
+          />
         )}
 
         {watchlist.map((item) => (

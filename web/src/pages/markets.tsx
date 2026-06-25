@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { SearchX } from "lucide-react";
 import { api } from "@/lib/api";
+import { EmptyState } from "@/components/empty-state";
 import type { Market } from "@fifa/shared";
 
 type MarketsResponse = {
@@ -77,7 +79,11 @@ export function MarketsPage() {
         })}
 
         {!isLoading && filtered.length === 0 && (
-          <p className="text-center py-16 text-muted-foreground text-sm">No markets found.</p>
+          <EmptyState
+            icon={SearchX}
+            title={search ? "No markets match your search" : "No markets available"}
+            description={search ? "Try a different team or keyword." : undefined}
+          />
         )}
       </main>
     </div>
