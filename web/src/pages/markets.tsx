@@ -31,9 +31,10 @@ export function MarketsPage() {
         <input
           type="search"
           placeholder="Search markets…"
+          aria-label="Search markets"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </header>
 

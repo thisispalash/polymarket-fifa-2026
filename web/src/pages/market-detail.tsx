@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
+import { ArrowLeft, Star } from "lucide-react";
 import { api, newClientOrderId } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Sparkline } from "@/components/sparkline";
+import { cn } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import type { SubmitOrderInput } from "@fifa/shared";
 
@@ -103,10 +105,21 @@ export function MarketDetailPage() {
   return (
     <div className="min-h-screen bg-background pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="text-primary text-sm">← Back</button>
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+          className="-ml-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-foreground transition-colors hover:bg-accent"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </button>
         <h1 className="flex-1 text-sm font-semibold leading-snug line-clamp-1">{market.question}</h1>
-        <Button size="sm" variant="outline" onClick={() => toggleWatch.mutate()}>
-          {inWatchlist ? "★ Saved" : "☆ Watch"}
+        <Button
+          size="sm"
+          variant={inWatchlist ? "secondary" : "outline"}
+          onClick={() => toggleWatch.mutate()}
+        >
+          <Star className={cn("h-4 w-4", inWatchlist && "fill-current text-primary")} aria-hidden />
+          {inWatchlist ? "Saved" : "Watch"}
         </Button>
       </header>
 

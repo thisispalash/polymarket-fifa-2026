@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
   STRATEGY_KINDS,
@@ -41,22 +42,12 @@ function StrategyCard({ s }: { s: StrategyConfig }) {
     <div className={cn("rounded-xl border bg-card p-4 space-y-3", !s.enabled && "opacity-60")}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">{STRATEGY_LABELS[s.kind]}</h2>
-        <button
-          role="switch"
-          aria-checked={s.enabled}
-          onClick={() => toggle.mutate(!s.enabled)}
-          className={cn(
-            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none",
-            s.enabled ? "bg-primary" : "bg-muted",
-          )}
-        >
-          <span
-            className={cn(
-              "pointer-events-none inline-block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform",
-              s.enabled ? "translate-x-5" : "translate-x-0",
-            )}
-          />
-        </button>
+        <Switch
+          checked={s.enabled}
+          onCheckedChange={(v) => toggle.mutate(v)}
+          disabled={toggle.isPending}
+          aria-label={`Enable ${STRATEGY_LABELS[s.kind]} strategy`}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -69,23 +60,13 @@ function StrategyCard({ s }: { s: StrategyConfig }) {
         {isArb && (
           <div>
             <p className="text-muted-foreground">Auto-execute</p>
-            <button
-              role="switch"
-              aria-checked={s.autoExecute}
-              onClick={() => setAutoExecute.mutate(!s.autoExecute)}
+            <Switch
+              checked={s.autoExecute}
+              onCheckedChange={(v) => setAutoExecute.mutate(v)}
               disabled={setAutoExecute.isPending}
-              className={cn(
-                "mt-1 relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none disabled:opacity-50",
-                s.autoExecute ? "bg-primary" : "bg-muted",
-              )}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow ring-0 transition-transform",
-                  s.autoExecute ? "translate-x-4" : "translate-x-0",
-                )}
-              />
-            </button>
+              aria-label={`Auto-execute ${STRATEGY_LABELS[s.kind]}`}
+              className="mt-1"
+            />
           </div>
         )}
       </div>
@@ -97,6 +78,7 @@ function StrategyCard({ s }: { s: StrategyConfig }) {
           step={10}
           value={cap}
           onChange={(e) => setCap(e.target.value)}
+          aria-label={`Capital cap in USDC for ${STRATEGY_LABELS[s.kind]}`}
           className="w-24 rounded-md border bg-background px-2 py-1 text-sm tabular-nums"
           placeholder="Cap $"
         />

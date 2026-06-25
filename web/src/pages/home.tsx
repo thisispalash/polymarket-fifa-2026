@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { api } from "@/lib/api";
 
 type WatchlistItem = {
@@ -39,8 +40,12 @@ export function HomePage() {
         {!isLoading && watchlist.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <p className="text-base">No markets on your watchlist yet.</p>
-            <Link to="/markets" className="text-primary text-sm underline mt-2 inline-block">
-              Browse markets →
+            <Link
+              to="/markets"
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary"
+            >
+              Browse markets
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
         )}

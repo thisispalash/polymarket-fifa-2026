@@ -136,9 +136,10 @@ export function SettingsPage() {
               <input
                 type="text"
                 placeholder="Reason (optional)"
+                aria-label="Kill switch reason"
                 value={killReason}
                 onChange={(e) => setKillReason(e.target.value)}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className="w-full h-11 rounded-md border bg-background px-3 py-2 text-sm"
               />
               <div className="flex gap-2">
                 <Button
