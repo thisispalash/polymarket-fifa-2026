@@ -52,13 +52,17 @@ export function MarketDetailPage() {
     queryFn: () => api.get<WatchlistItem[]>("/api/watchlist"),
   });
 
-  const inWatchlist = watchlist.some((w) => w.marketId === id);
+  // Key the watchlist off the resolved Gamma market id, not the route param —
+  // the param may be a slug (portfolio links by slug), but the watchlist is
+  // always keyed by market id (markets list + home link use it).
+  const marketKey = market?.id;
+  const inWatchlist = !!marketKey && watchlist.some((w) => w.marketId === marketKey);
 
   const toggleWatch = useMutation({
     mutationFn: () =>
       inWatchlist
-        ? api.del(`/api/watchlist/${id}`)
-        : api.post(`/api/watchlist/${id}`, { slug: market?.slug ?? "", question: market?.question ?? "", conditionId: market?.conditionId ?? "" }),
+        ? api.del(`/api/watchlist/${marketKey}`)
+        : api.post(`/api/watchlist/${marketKey}`, { slug: market?.slug ?? "", question: market?.question ?? "", conditionId: market?.conditionId ?? "" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["watchlist"] }),
   });
 

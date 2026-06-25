@@ -18,6 +18,7 @@ type PortfolioPosition = {
   avgPrice: number;
   currentPrice: number;
   question: string;
+  slug: string;
   costBasis: number;
   currentValue: number;
   unrealizedPnl: number;
@@ -63,10 +64,10 @@ export function PortfolioPage() {
       {balances && (
         <div className="px-4 py-4">
           <div className="rounded-2xl border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground">Portfolio value</p>
+            <p className="text-xs font-medium text-muted-foreground">Account value</p>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <span className="text-3xl font-bold tabular-nums tracking-tight">
-                ${balances.totalCurrentValue.toFixed(2)}
+                ${(balances.usdc + balances.totalCurrentValue).toFixed(2)}
               </span>
               <span className={cn("text-sm font-semibold tabular-nums",
                 balances.totalUnrealizedPnl >= 0 ? "text-profit" : "text-loss"
@@ -122,7 +123,7 @@ export function PortfolioPage() {
           <div key={p.id} className="rounded-xl border bg-card p-4 space-y-2">
             <div className="flex items-start gap-2">
               <Link
-                to={`/markets/${p.marketId}`}
+                to={`/markets/${p.slug || p.marketId}`}
                 className="flex-1 text-sm font-medium leading-snug line-clamp-2 hover:underline"
               >
                 {p.question}
